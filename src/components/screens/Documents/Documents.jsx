@@ -269,20 +269,20 @@ const FALLBACK_PDF_URL = "/doc/PUBLIC-POLICY.pdf";
 const getPdfUrl = (doc) => doc?.pdfUrl || FALLBACK_PDF_URL;
 
 const STATUS_META = {
-    YES:     { Icon: FileText,    bg: "bg-green-50", ic: "text-green-500", badge: "bg-green-50 text-green-600",  label: "Detected" },
-    PARTIAL: { Icon: AlertCircle, bg: "bg-amber-50", ic: "text-amber-500", badge: "bg-amber-50 text-amber-600",  label: "Partial"  },
-    NO:      { Icon: XCircle,     bg: "bg-red-50",   ic: "text-red-500",   badge: "bg-red-50 text-red-500",      label: "Missing"  },
+    YES: { Icon: FileText, bg: "bg-green-50", ic: "text-green-500", badge: "bg-green-50 text-green-600", label: "Detected" },
+    PARTIAL: { Icon: AlertCircle, bg: "bg-amber-50", ic: "text-amber-500", badge: "bg-amber-50 text-amber-600", label: "Partial" },
+    NO: { Icon: XCircle, bg: "bg-red-50", ic: "text-red-500", badge: "bg-red-50 text-red-500", label: "Missing" },
 };
 
 // ── PDF.js canvas viewer ───────────────────────────────────────────────────
 const PdfCanvasViewer = ({ url, zoom }) => {
-    const canvasRef               = useRef(null);
-    const renderTaskRef           = useRef(null);
-    const [pdf, setPdf]           = useState(null);
-    const [pageNum, setPageNum]   = useState(1);
+    const canvasRef = useRef(null);
+    const renderTaskRef = useRef(null);
+    const [pdf, setPdf] = useState(null);
+    const [pageNum, setPageNum] = useState(1);
     const [numPages, setNumPages] = useState(0);
-    const [loading, setLoading]   = useState(true);
-    const [error, setError]       = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     // Load PDF.js from CDN, then load the document
     useEffect(() => {
@@ -335,13 +335,13 @@ const PdfCanvasViewer = ({ url, zoom }) => {
         }
 
         pdf.getPage(pageNum).then((page) => {
-            const viewport  = page.getViewport({ scale: zoom });
-            const canvas    = canvasRef.current;
+            const viewport = page.getViewport({ scale: zoom });
+            const canvas = canvasRef.current;
             if (!canvas) return;
-            canvas.height   = viewport.height;
-            canvas.width    = viewport.width;
-            const ctx       = canvas.getContext("2d");
-            const task      = page.render({ canvasContext: ctx, viewport });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            const ctx = canvas.getContext("2d");
+            const task = page.render({ canvasContext: ctx, viewport });
             renderTaskRef.current = task;
             task.promise.catch((err) => {
                 if (err?.name !== "RenderingCancelledException") console.error(err);
@@ -399,15 +399,15 @@ const PdfCanvasViewer = ({ url, zoom }) => {
 // ── Main Documents component ───────────────────────────────────────────────
 const Documents = () => {
     const dispatch = useDispatch();
-    const policy   = useSelector(selectCurrentPolicy);
+    const policy = useSelector(selectCurrentPolicy);
     const { selectedDocViewerIdx, zoom2 } = useSelector((s) => s.validation);
     const [mobileDetail, setMobileDetail] = React.useState(false);
 
-    const doc        = docChecklist[selectedDocViewerIdx];
+    const doc = docChecklist[selectedDocViewerIdx];
     const validFiles = docChecklist.filter((d) => d.st !== "NO");
-    const pdfUrl     = getPdfUrl(doc);
+    const pdfUrl = getPdfUrl(doc);
 
-    const handleZoomIn  = () => dispatch(setZoom2(Math.min(zoom2 + 0.25, 3)));
+    const handleZoomIn = () => dispatch(setZoom2(Math.min(zoom2 + 0.25, 3)));
     const handleZoomOut = () => dispatch(setZoom2(Math.max(zoom2 - 0.25, 0.5)));
 
     const handleSelectDoc = (idx) => {
@@ -422,9 +422,8 @@ const Documents = () => {
         return (
             <button
                 onClick={() => handleSelectDoc(i)}
-                className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left ${
-                    isActive ? "bg-gray-50 border-l-2 border-l-primary" : ""
-                }`}
+                className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left ${isActive ? "bg-gray-50 border-l-2 border-l-primary" : ""
+                    }`}
             >
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${bg}`}>
                     <Icon size={13} className={ic} />
@@ -458,7 +457,7 @@ const Documents = () => {
 
                 {doc && doc.st !== "NO" && (
                     <>
-                        <button onClick={handleZoomIn}  title="Zoom in"  className="p-1.5 rounded-md border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-primary transition"><ZoomIn  size={13} /></button>
+                        <button onClick={handleZoomIn} title="Zoom in" className="p-1.5 rounded-md border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-primary transition"><ZoomIn size={13} /></button>
                         <button onClick={handleZoomOut} title="Zoom out" className="p-1.5 rounded-md border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-primary transition"><ZoomOut size={13} /></button>
                         <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full tabular-nums">
                             {Math.round(zoom2 * 100)}%
@@ -528,9 +527,9 @@ const Documents = () => {
         <div>
             <Breadcrumb
                 crumbs={[
-                    { label: "Dashboard",        screen: "dashboard"  },
-                    { label: "Policy List",       screen: "policyList" },
-                    { label: "Policy Checklist",  screen: "checklist"  },
+                    { label: "Dashboard", screen: "dashboard" },
+                    { label: "Policy List", screen: "policyList" },
+                    { label: "Policy Checklist", screen: "checklist" },
                     { label: "Document Viewer" },
                 ]}
             />
