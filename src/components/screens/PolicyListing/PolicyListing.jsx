@@ -8,14 +8,16 @@ import {
 import { navigate } from "../../../store/slices/navigationSlice";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import Breadcrumb from "../../layout/Breadcrumb";
+import { setPolicyCheckList } from "../../../store/slices/batchSlice";
+import { getPolicyCheckList } from "../../api/apisCall";
 
-const AI_MAP  = { Complete: "bg-green-50 text-green-600",  Running: "bg-amber-50 text-amber-600",  Failed: "bg-red-50 text-red-600"   };
-const CK_MAP  = { "All Present": "bg-green-50 text-green-600", Pending: "bg-amber-50 text-amber-600", Missing: "bg-red-50 text-red-600" };
-const VAL_MAP = { Pass: "bg-green-50 text-green-600", "Failed": "bg-amber-50 text-amber-600", };
-const TYPE_MAP= { Auto: "bg-blue-50 text-blue-600", Home: "bg-green-50 text-green-600", Commercial: "bg-purple-50 text-purple-600" };
-const ST_MAP  = { Completed: "bg-green-50 text-green-600", "In Progress": "bg-blue-50 text-blue-600", "Needs Attention": "bg-red-50 text-red-600" };
+const AI_MAP = { complete: "bg-green-50 text-green-600", running: "bg-amber-50 text-amber-600", failed: "bg-red-50 text-red-600" };
+const CK_MAP = { "All Present": "bg-green-50 text-green-600", Pending: "bg-amber-50 text-amber-600", Missing: "bg-red-50 text-red-600" };
+const VAL_MAP = { Pass: "bg-green-50 text-green-600", "Failed": "bg-amber-50 text-amber-600", pending: "bg-amber-50 text-amber-600", };
+const TYPE_MAP = { Auto: "bg-blue-50 text-blue-600", Home: "bg-green-50 text-green-600", Commercial: "bg-purple-50 text-purple-600" };
+const ST_MAP = { completed: "bg-green-50 text-green-600", "in progress": "bg-blue-50 text-blue-600", "needs attention": "bg-red-50 text-red-600", processing: "bg-blue-50 text-blue-600", };
 
-const TABLE_HEADS = ["Policy #", "Customer", "Customer Office Name", "Customer CSR", "Type", "Sold Date", "Docs", "AI Status",  "Validation", "Action"];
+const TABLE_HEADS = ["Policy #", "Customer", "Customer Office Name", "Customer CSR", "Type", "Sold Date", "Docs", "AI Status", "Validation", "Action"];
 
 const Badge = ({ label, map }) => (
     <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${map[label] || "bg-gray-100 text-gray-500"}`}>
@@ -25,12 +27,15 @@ const Badge = ({ label, map }) => (
 
 const PolicyListing = () => {
     const dispatch = useDispatch();
-    const batch    = useSelector(selectCurrentBatch);
+    const batch = useSelector(selectCurrentBatch);
+    const { policySummary, policyList } = useSelector((state) => state.batch);
     const policies = useSelector(selectCurrentPolicies);
-    const pending  = batch ? batch.total - batch.done : 0;
+
+    const pending = batch ? batch.pending : 0;
 
     const handleOpenPolicy = (idx) => {
         dispatch(selectPolicy(idx));
+        getPolicyCheckList(setPolicyCheckList, policyList[idx].policy_id, dispatch);
         dispatch(navigate("checklist"));
     };
 
@@ -43,17 +48,17 @@ const PolicyListing = () => {
             {/* ── Page header ── */}
             <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
                 <div>
-                    <h1 className="text-xl font-bold text-gray-800 tracking-tight">Policies – {batch.id}</h1>
-                    <p className="text-sm text-gray-500 mt-0.5">Batch Date: {batch.date}</p>
+                    <h1 className="text-xl font-bold text-gray-800 tracking-tight">Policies – {policySummary?.batch_id}</h1>
+                    <p className="text-sm text-gray-500 mt-0.5">Batch Date: {policySummary?.batch_date}</p>
                 </div>
                 <div className="flex items-center gap-4 flex-wrap">
-                    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${ST_MAP[batch.st] || "bg-gray-100 text-gray-500"}`}>
-                        {batch.st}
+                    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${ST_MAP[policySummary?.status] || "bg-gray-100 text-gray-500"}`}>
+                        {policySummary?.status}
                     </span>
                     <div className="text-sm text-gray-500 flex gap-3">
-                        <span>Total: <strong className="text-gray-800">{batch.total}</strong></span>
-                        <span>Processed: <strong className="text-green-600">{batch.done}</strong></span>
-                        <span>Pending: <strong className="text-amber-500">{pending}</strong></span>
+                        <span>Total: <strong className="text-gray-800">{policySummary?.total_policies}</strong></span>
+                        <span>Processed: <strong className="text-green-600">{policySummary?.processed}</strong></span>
+                        <span>Pending: <strong className="text-amber-500">{policySummary?.pending}</strong></span>
                     </div>
                 </div>
             </div>
@@ -79,33 +84,33 @@ const PolicyListing = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {policies.map((p, i) => (
+                            {policyList.map((p, i) => (
                                 <tr key={p.id} onClick={() => handleOpenPolicy(i)}
                                     className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors last:border-b-0">
-                                    <td className="px-4 py-1.5 text-[13px] font-semibold text-primary font-mono">{p.id}</td>
+                                    <td className="px-4 py-1.5 text-[13px] font-semibold text-primary ">{p.policy_number}</td>
                                     <td className="px-4 py-1.5 max-w-[140px]">
                                         <div className="relative group w-full">
-                                            <p className="text-[13px] font-semibold text-gray-800 truncate">{p.name}</p>
+                                            <p className="text-[13px] font-semibold text-gray-800 truncate">{p.customer_name}</p>
                                             <div className="absolute left-0 top-full mt-1.5 z-50 hidden group-hover:block">
-                                                <div className="bg-gray-800 text-white text-[11px] font-medium px-2.5 py-1.5 rounded-md shadow-lg whitespace-nowrap">{p.name}</div>
+                                                <div className="bg-gray-800 text-white text-[11px] font-medium px-2.5 py-1.5 rounded-md shadow-lg whitespace-nowrap">{p.customer_name}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-1.5 text-[13px] font-semibold text-gray-800">{p.customerofficename}</td>
-                                    <td className="px-4 py-1.5 text-[13px] font-semibold text-gray-800">{p.customercsr}</td>
-                                    <td className="px-4 py-1.5 text-[13px] text-gray-500">{p.type}</td>
+                                    <td className="px-4 py-1.5 text-[13px] font-semibold text-gray-800">{p.customer_office_name}</td>
+                                    <td className="px-4 py-1.5 text-[13px] font-semibold text-gray-800">{p.customer_csr}</td>
+                                    <td className="px-4 py-1.5 text-[13px] text-gray-500 truncate">{p.policy_type}</td>
                                     <td className="px-4 py-1.5 max-w-[140px]">
                                         <div className="relative group w-full">
-                                            <p className="text-[13px] text-gray-500 truncate">{p.soldDate}</p>
+                                            <p className="text-[13px] text-gray-500 truncate">{p.sold_date}</p>
                                             <div className="absolute left-0 top-full mt-1.5 z-50 hidden group-hover:block">
-                                                <div className="bg-gray-800 text-white text-[11px] font-medium px-2.5 py-1.5 rounded-md shadow-lg whitespace-nowrap">{p.soldDate}</div>
+                                                <div className="bg-gray-800 text-white text-[11px] font-medium px-2.5 py-1.5 rounded-md shadow-lg whitespace-nowrap">{p.sold_date}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-1.5 text-[13px] font-bold text-gray-800">{p.docs}</td>
-                                    <td className="px-4 py-1.5"><Badge label={p.aiSt} map={AI_MAP} /></td>
+                                    <td className="px-4 py-1.5 text-[13px] font-bold text-gray-800">{p.documents_count}</td>
+                                    <td className="px-4 py-1.5"><Badge label={p.ai_status} map={AI_MAP} /></td>
                                     {/* <td className="px-4 py-1.5"><Badge label={p.ck}   map={CK_MAP} /></td> */}
-                                    <td className="px-4 py-1.5"><Badge label={p.val}  map={VAL_MAP} /></td>
+                                    <td className="px-4 py-1.5"><Badge label={p.validation_status} map={VAL_MAP} /></td>
                                     <td className="px-4 py-1.5">
                                         <button onClick={(e) => { e.stopPropagation(); handleOpenPolicy(i); }}
                                             className="flex items-center gap-1 text-[11px] font-semibold text-gray-500 border border-gray-200 bg-white hover:border-gray-300 hover:text-gray-700 px-2.5 py-1 rounded-md transition">

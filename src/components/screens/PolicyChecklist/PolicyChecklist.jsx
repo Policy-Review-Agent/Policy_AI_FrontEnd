@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { navigate } from "../../../store/slices/navigationSlice";
-import { selectCurrentPolicy } from "../../../store/slices/batchSlice";
+import { selectCurrentPolicy, selectCurrentBatch, setChecklistSummary, setPolicyList, setPolicyCheckList } from "../../../store/slices/batchSlice";
 import { setSelectedDocViewerIdx } from "../../../store/slices/validationSlice";
-import { docChecklist } from "../../../data/checklist";
+import { getChecklistSummary, getPolicyList, getPolicyCheckList } from "../../api/apisCall";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -20,22 +20,43 @@ const TABLE_HEADS = ["#", "Document Name", "Detected", "Confidence", "Validation
 const PolicyChecklist = () => {
   const dispatch = useDispatch();
   const policy = useSelector(selectCurrentPolicy);
+  const batch = useSelector(selectCurrentBatch);
+  const { checklistSummary, policyCheckList } = useSelector((state) => state.batch);
+  
+  const present = (policyCheckList || []).filter((d) => (d.detected_status === "found" || d.st === "YES")).length;
+  const missing = (policyCheckList || []).filter((d) => (d.detected_status === "missing" || d.st === "NO")).length;
+  const partial = (policyCheckList || []).filter((d) => (d.detected_status === "partial" || d.st === "PARTIAL")).length;
+  console.log("checklicst", policyCheckList)
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (batch?.batch_id && !policy) {
+          await getPolicyList(setPolicyList, batch.batch_id, dispatch);
+        }
+        if (policy) {
+          const idStr = policy.policy_id;
+          await getChecklistSummary(setChecklistSummary, idStr, dispatch);
+          await getPolicyCheckList(setPolicyCheckList, idStr, dispatch);
+        }
+      } catch (error) {
+        console.error("Error in API calls:", error);
+      }
+    };
 
-  const present = docChecklist.filter((d) => d.st === "YES").length;
-  const missing = docChecklist.filter((d) => d.st === "NO").length;
-  const partial = docChecklist.filter((d) => d.st === "PARTIAL").length;
+    fetchData();
+  }, [batch?.batch_id, policy, dispatch]);
   const dashaboardCard = [
     {
       discription: 'Detected',
-      count: 5
+      count: present
     },
     {
       discription: 'Missing',
-      count: 4
+      count: missing
     },
     {
       discription: 'Partial',
-      count: 1
+      count: partial
     }
   ]
 
@@ -44,15 +65,14 @@ const PolicyChecklist = () => {
     dispatch(navigate("documents"));
   };
 
-  if (!policy) return <p className="text-sm text-gray-400">No policy selected.</p>;
-
+  // if (!policy) return <p className="text-sm text-gray-400">No policy selected.</p>;
   return (
     <div>
       <Breadcrumb
         crumbs={[
           { label: "Dashboard", screen: "dashboard" },
           { label: "Policy List", screen: "policyList" },
-          { label: `${policy.id} – ${policy.name}` },
+          { label: `${policy?.policy_number} – ${policy?.customer_name}` },
         ]}
       />
 
@@ -60,25 +80,25 @@ const PolicyChecklist = () => {
       <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
         <div>
           <h1 className="text-xl font-bold text-gray-800 tracking-tight">
-            {policy.name} — {policy.type} Insurance
+            {checklistSummary?.customer_name}-{checklistSummary?.policy_type} Insurance
           </h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            {policy.id} · Sold {policy.soldDate}
+          <p className="text-[13px] text-gray-400 mt-0.5">
+            {checklistSummary?.policy_number} . Sold {checklistSummary?.sold_date}
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => dispatch(navigate("policyList"))}
-            className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 border border-gray-200 bg-white hover:bg-gray-50 px-3 py-0 rounded-md transition"
+            className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 border border-gray-200 bg-white hover:bg-gray-50 px-3 py-1 rounded-md transition"
           >
             <ArrowLeft size={12} /> Back
           </button>
-          <button
+          {/* <button
             onClick={() => dispatch(navigate("validation"))}
             className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 bg-primary hover:bg-primary-dark px-3 py-2 rounded-md transition"
           >
             Proceed to Validation <ArrowRight size={12} />
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -143,11 +163,12 @@ const PolicyChecklist = () => {
 
             {/* On mobile tbody has p-3 gap so cards breathe inside the outer card */}
             <tbody className="md:table-row-group p-1 md:p-0 space-y-2 md:space-y-0">
-              {docChecklist.map((doc, i) => (
+              {policyCheckList?.map((doc, index) => (
                 <ChecklistRow
                   key={doc.id}
                   doc={doc}
-                  onViewDoc={() => handleViewDoc(i)}
+                  index={index}
+                  onViewDoc={() => handleViewDoc(index)}
                 />
               ))}
             </tbody>

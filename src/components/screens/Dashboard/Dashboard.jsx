@@ -1,28 +1,46 @@
-import React from "react";
-import { useSelector } from "react-redux";
+import React, { useEffect } from "react";
 import { Layers, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import Breadcrumb from "../../layout/Breadcrumb";
 import BatchCard from "./BatchCard";
+import { getDashboardStats, getDashboardList } from "../../api/apisCall";
+import { setDashboardStats, setDashboardList } from "../../../store/slices/batchSlice"
+import { useSelector, useDispatch } from "react-redux";
 
 const STATS_CONFIG = [
-    { key: "total", label: "Total Batches", sub: "All time", Icon: Layers, color: "bg-blue-50 text-blue-600" },
-    { key: "inProgress", label: "In Progress", sub: "Being processed", Icon: Clock, color: "bg-amber-50 text-amber-500" },
+    { key: "total_batches", label: "Total Batches", sub: "All time", Icon: Layers, color: "bg-blue-50 text-blue-600" },
+    { key: "in_progress", label: "In Progress", sub: "Being processed", Icon: Clock, color: "bg-amber-50 text-amber-500" },
     { key: "completed", label: "Completed", sub: "All policies done", Icon: CheckCircle, color: "bg-green-50 text-green-500" },
-    { key: "attention", label: "Needs Attention", sub: "Issues found", Icon: AlertCircle, color: "bg-red-50 text-red-500" },
+    { key: "needs_attention", label: "Needs Attention", sub: "Issues found", Icon: AlertCircle, color: "bg-red-50 text-red-500" },
 ];
 
 const TABLE_HEADS = ["Batch ID", "Batch Date", "Total", "Processed", "Pending", "Status", "Action"];
 
 const Dashboard = () => {
-    const batches = useSelector((s) => s.batch.batches);
+    const dispatch = useDispatch();
+    const { dashboardStats, batches, dashboardList } = useSelector((s) => s.batch)
+    // const batches = useSelector((s) => s.batch.batches);
 
     const stats = {
-        total: batches.length,
-        inProgress: batches.filter((b) => b.st === "In Progress").length,
-        completed: batches.filter((b) => b.st === "Completed").length,
-        attention: batches.filter((b) => b.st === "Needs Attention").length,
+        total_batches: dashboardStats?.total_batches || 0,
+        in_progress: dashboardStats?.in_progress || 0,
+        completed: dashboardStats?.completed || 0,
+        needs_attention: dashboardStats?.needs_attention || 0,
     };
 
+    useEffect(() => {
+        const fetchDashboardData = () => {
+            getDashboardStats(setDashboardStats, dispatch);
+            getDashboardList(setDashboardList, dispatch);
+        };
+
+        // Initial fetch
+        fetchDashboardData();
+
+        // Polling every 5 seconds for real-time updates
+        const intervalId = setInterval(fetchDashboardData, 30000);
+
+        return () => clearInterval(intervalId);
+    }, [dispatch]);
     return (
         <div>
             <Breadcrumb crumbs={[{ label: "Dashboard" }]} />
@@ -84,8 +102,8 @@ const Dashboard = () => {
                         {/* On mobile BatchCard renders a full-width card inside a <td colSpan={7}> */}
                         {/* On desktop BatchCard renders a normal <tr> */}
                         <tbody className="md:divide-y md:divide-gray-100">
-                            {batches.map((b) => (
-                                <BatchCard key={b.id} batch={b} />
+                            {dashboardList.map((b) => (
+                                <BatchCard key={b.batch_id} batch={b} />
                             ))}
                         </tbody>
 

@@ -5,30 +5,54 @@ const batchSlice = createSlice({
   name: "batch",
   initialState: {
     batches,
-    selectedBatchId:   batches[0].id,
+    selectedBatchId: batches[0].id,
     selectedPolicyIdx: 0,
+    dashboardStats: null,
+    dashboardList: [],
+    policySummary: null,
+    policyList: [],
+    checklistSummary: null,
+    policyCheckList: [],
   },
   reducers: {
     selectBatch: (state, action) => {
-      state.selectedBatchId   = action.payload;
+      state.selectedBatchId = action.payload;
       state.selectedPolicyIdx = 0;
     },
     selectPolicy: (state, action) => {
       state.selectedPolicyIdx = action.payload;
     },
+    setDashboardStats: (state, action) => {
+      state.dashboardStats = action.payload
+    },
+    setDashboardList: (state, action) => {
+      state.dashboardList = action.payload
+    },
+    setPolicySummary: (state, action) => {
+      state.policySummary = action.payload
+    },
+    setPolicyList: (state, action) => {
+      state.policyList = action.payload
+    },
+    setChecklistSummary: (state, action) => {
+      state.checklistSummary = action.payload
+    },
+    setPolicyCheckList: (state, action) => {
+      state.policyCheckList = action.payload
+    },
   },
 });
 
-export const { selectBatch, selectPolicy } = batchSlice.actions;
+export const { selectBatch, selectPolicy, setDashboardStats, setDashboardList, setPolicySummary, setPolicyList, setChecklistSummary, setPolicyCheckList } = batchSlice.actions;
 
 export const selectCurrentBatch = (s) =>
-  s.batch.batches.find((b) => b.id === s.batch.selectedBatchId);
+  s.batch.dashboardList.find((b) => b.batch_id === s.batch.selectedBatchId);
 
 export const selectCurrentPolicies = (s) =>
-  batchPolicies[s.batch.selectedBatchId] || [];
+  s.batch.policyList || [];
 
 export const selectCurrentPolicy = (s) => {
-  const policies = batchPolicies[s.batch.selectedBatchId] || [];
+  const policies = s.batch.policyList || [];
   return policies[s.batch.selectedPolicyIdx];
 };
 

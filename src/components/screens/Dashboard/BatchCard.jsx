@@ -1,21 +1,25 @@
 import React from "react";
 import { useDispatch } from "react-redux";
-import { selectBatch } from "../../../store/slices/batchSlice";
+import { selectBatch, setPolicySummary, setPolicyList } from "../../../store/slices/batchSlice";
 import { navigate } from "../../../store/slices/navigationSlice";
 import { ArrowRight, ChevronRight } from "lucide-react";
+import { getPolicySummary, getPolicyList } from "../../api/apisCall";
 
 const STATUS_MAP = {
-  Completed:         "bg-green-50 text-green-600",
-  "In Progress":     "bg-blue-50 text-blue-600",
-  "Needs Attention": "bg-red-50 text-red-600",
+  completed: "bg-green-50 text-green-600",
+  "in progress": "bg-blue-50 text-blue-600",
+  "needs attention": "bg-red-50 text-red-600",
+  processing: "bg-blue-50 text-blue-600",
 };
 
 const BatchCard = ({ batch }) => {
   const dispatch = useDispatch();
-  const pending  = batch.total - batch.done;
+  const pending = batch.pending;
 
   const handleOpen = () => {
-    dispatch(selectBatch(batch.id));
+    getPolicySummary(setPolicySummary, batch.batch_id, dispatch);
+    getPolicyList(setPolicyList, batch.batch_id, dispatch);
+    dispatch(selectBatch(batch.batch_id));
     dispatch(navigate("policyList"));
   };
 
@@ -26,14 +30,14 @@ const BatchCard = ({ batch }) => {
         onClick={handleOpen}
         className="hidden md:table-row border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors last:border-b-0"
       >
-        <td className="px-4 py-1.5 text-[13px] font-semibold text-primary font-mono">{batch.id}</td>
-        <td className="px-4 py-1.5 text-[13px] text-gray-600">{batch.date}</td>
-        <td className="px-4 py-1.5 text-[13px] font-bold text-gray-800">{batch.total}</td>
-        <td className="px-4 py-1.5 text-[13px] font-semibold text-green-600">{batch.done}</td>
-        <td className="px-4 py-1.5 text-[13px] font-semibold text-amber-500">{pending}</td>
+        <td className="px-4 py-1.5 text-[13px] font-semibold text-primary font-mono">{batch.batch_number}</td>
+        <td className="px-4 py-1.5 text-[13px] text-gray-600">{batch.batch_date}</td>
+        <td className="px-4 py-1.5 text-[13px] font-bold text-gray-800">{batch.total_policies}</td>
+        <td className="px-4 py-1.5 text-[13px] font-semibold text-green-600">{batch.processed}</td>
+        <td className="px-4 py-1.5 text-[13px] font-semibold text-amber-500">{batch.pending}</td>
         <td className="px-4 py-1.5">
-          <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${STATUS_MAP[batch.st] || "bg-gray-100 text-gray-500"}`}>
-            {batch.st}
+          <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${STATUS_MAP[batch.status] || "bg-gray-100 text-gray-500"}`}>
+            {batch.status}
           </span>
         </td>
         <td className="px-4 py-1.5">
@@ -57,18 +61,18 @@ const BatchCard = ({ batch }) => {
             <div className="flex-1 min-w-0">
               {/* Batch ID + status */}
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="text-[12px] font-semibold text-primary font-mono">{batch.id}</span>
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_MAP[batch.st] || "bg-gray-100 text-gray-500"}`}>
-                  {batch.st}
+                <span className="text-[12px] font-semibold text-primary font-mono">{batch.batch_id}</span>
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_MAP[batch.status] || "bg-gray-100 text-gray-500"}`}>
+                  {batch.status}
                 </span>
               </div>
               {/* Date */}
-              <p className="text-[11px] text-gray-400 mb-2">{batch.date}</p>
+              <p className="text-[11px] text-gray-400 mb-2">{batch.batch_date}</p>
               {/* Stats row */}
               <div className="flex gap-3 text-[11px] text-gray-500">
-                <span>Total <strong className="text-gray-800">{batch.total}</strong></span>
-                <span>Done <strong className="text-green-600">{batch.done}</strong></span>
-                <span>Pending <strong className="text-amber-500">{pending}</strong></span>
+                <span>Total <strong className="text-gray-800">{batch.total_policies}</strong></span>
+                <span>Done <strong className="text-green-600">{batch.processed}</strong></span>
+                <span>Pending <strong className="text-amber-500">{batch.pending}</strong></span>
               </div>
             </div>
 
