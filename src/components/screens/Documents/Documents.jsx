@@ -28,6 +28,9 @@ const FALLBACK_PDF_URL = "/doc/Policy_ChuckShirey.pdf";
 const getPdfUrl = (doc) => doc?.pdfUrl || FALLBACK_PDF_URL;
 
 const STATUS_META = {
+    found: { Icon: FileText, bg: "bg-green-50", ic: "text-green-500", badge: "bg-green-50 text-green-600", label: "Detected" },
+    partial: { Icon: AlertCircle, bg: "bg-amber-50", ic: "text-amber-500", badge: "bg-amber-50 text-amber-600", label: "Partial" },
+    missing: { Icon: XCircle, bg: "bg-red-50", ic: "text-red-500", badge: "bg-red-50 text-red-500", label: "Missing" },
     YES: { Icon: FileText, bg: "bg-green-50", ic: "text-green-500", badge: "bg-green-50 text-green-600", label: "Detected" },
     PARTIAL: { Icon: AlertCircle, bg: "bg-amber-50", ic: "text-amber-500", badge: "bg-amber-50 text-amber-600", label: "Partial" },
     NO: { Icon: XCircle, bg: "bg-red-50", ic: "text-red-500", badge: "bg-red-50 text-red-500", label: "Missing" },
@@ -45,6 +48,11 @@ const PdfCanvasViewer = ({ url, zoom }) => {
 
     useEffect(() => {
         let cancelled = false;
+        if (!url) {
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         setError(null);
         setPdf(null);
@@ -56,21 +64,39 @@ const PdfCanvasViewer = ({ url, zoom }) => {
                     await new Promise((resolve, reject) => {
                         const s = document.createElement("script");
                         s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+                        s.async = true;
                         s.onload = resolve;
-                        s.onerror = reject;
+                        s.onerror = () => reject(new Error("Failed to load PDF.js library"));
                         document.head.appendChild(s);
+                        // Safety timeout
+                        setTimeout(() => reject(new Error("PDF.js library load timeout")), 10000);
                     });
+                }
+
+                // Ensure worker is always set
+                if (window.pdfjsLib && !window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
                     window.pdfjsLib.GlobalWorkerOptions.workerSrc =
                         "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
                 }
-                const pdfDoc = await window.pdfjsLib.getDocument({ url, withCredentials: false }).promise;
+
+                console.log("Loading PDF from:", url);
+                const loadingTask = window.pdfjsLib.getDocument({
+                    url,
+                    withCredentials: false,
+                    // Handle CORS issues by encouraging cross-origin
+                    disableRange: false,
+                    disableAutoFetch: false
+                });
+
+                const pdfDoc = await loadingTask.promise;
                 if (cancelled) return;
+
                 setPdf(pdfDoc);
                 setNumPages(pdfDoc.numPages);
             } catch (err) {
                 if (cancelled) return;
                 console.error("PDF load error:", err);
-                setError("Failed to load PDF. Check the URL or network.");
+                setError(err.message || "Failed to load PDF. Verify the document URL or network connection.");
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -96,10 +122,19 @@ const PdfCanvasViewer = ({ url, zoom }) => {
             const task = page.render({ canvasContext: ctx, viewport });
             renderTaskRef.current = task;
             task.promise.catch((err) => {
-                if (err?.name !== "RenderingCancelledException") console.error(err);
+                if (err?.name !== "RenderingCancelledException") console.error("Render error:", err);
             });
+        }).catch(err => {
+            console.error("Page get error:", err);
         });
     }, [pdf, pageNum, zoom]);
+
+    if (!url) return (
+        <div className="flex flex-col items-center justify-center h-72 py-16 bg-gray-50">
+            <AlertCircle size={40} className="text-gray-200 mb-3" />
+            <p className="text-sm font-semibold text-gray-400">No PDF URL provided</p>
+        </div>
+    );
 
     if (loading) return (
         <div className="flex flex-col items-center justify-center h-72 gap-3 bg-gray-100">
@@ -151,10 +186,30 @@ const Documents = () => {
     const policy = useSelector(selectCurrentPolicy);
     const { selectedDocViewerIdx, zoom2 } = useSelector((s) => s.validation);
     const [mobileDetail, setMobileDetail] = React.useState(false);
+    const { documentData, policyCheckList } = useSelector((state) => state.batch);
 
-    const doc = docChecklist[selectedDocViewerIdx];
-    const validFiles = docChecklist.filter((d) => d.st !== "NO");
-    const pdfUrl = getPdfUrl(doc);
+    // documentData is now an object: { documents: [], selected_document: {}, extracted_fields: {}, validation_rules: [] }
+    const isApiDataObject = documentData && typeof documentData === 'object' && !Array.isArray(documentData) && documentData.documents;
+
+    // Primary list of documents
+    const activeList = isApiDataObject
+        ? documentData.documents
+        : (Array.isArray(documentData) && documentData.length > 0
+            ? documentData
+            : (policyCheckList && policyCheckList.length > 0 ? policyCheckList : docChecklist));
+
+    const doc = activeList[selectedDocViewerIdx];
+
+    // PDF URL from selected_document.blob_url or fallback
+    const pdfUrl = (isApiDataObject && documentData.selected_document?.blob_url)
+        ? documentData.selected_document.blob_url
+        : (doc?.pdf_url || doc?.pdfUrl || FALLBACK_PDF_URL);
+
+    // Filtering for valid files badge
+    const validFiles = activeList.filter((d) => {
+        const s = (d.status || d.detected_status || d.st || "").toLowerCase();
+        return s !== "no" && s !== "missing";
+    });
 
     const handleZoomIn = () => dispatch(setZoom2(Math.min(zoom2 + 0.25, 3)));
     const handleZoomOut = () => dispatch(setZoom2(Math.max(zoom2 - 0.25, 0.5)));
@@ -166,8 +221,14 @@ const Documents = () => {
     };
 
     const DocListItem = ({ d, i }) => {
-        const { Icon, bg, ic, badge, label } = STATUS_META[d.st];
+        const status = d?.status || d?.detected_status || d?.st || "missing";
+        const meta = STATUS_META[status] || STATUS_META["missing"];
+        const { Icon, bg, ic, badge, label } = meta;
         const isActive = selectedDocViewerIdx === i;
+
+        const name = d?.document_name || d?.name;
+        const filename = d?.file_name || d?.file || d?.filename || (d.pdf_url ? d.pdf_url.split('/').pop() : "No file");
+
         return (
             <button
                 onClick={() => handleSelectDoc(i)}
@@ -178,8 +239,8 @@ const Documents = () => {
                     <Icon size={13} className={ic} />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-semibold text-gray-800 truncate">{d.name}</p>
-                    <p className="text-[10.5px] text-gray-400 mt-0.5 truncate">{d.file || "No file"}</p>
+                    <p className="text-[12px] font-semibold text-gray-800 truncate">{name}</p>
+                    <p className="text-[10.5px] text-gray-400 mt-0.5 truncate">{filename}</p>
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${badge}`}>{label}</span>
@@ -197,13 +258,94 @@ const Documents = () => {
             { key: "rules", label: "Validation Rules" },
         ];
 
+        const status = (doc?.status || doc?.detected_status || doc?.st || "missing").toLowerCase();
+        const isPresent = status !== "no" && status !== "missing";
+
+        // Confidence calculation
+        let confidenceValue = 0;
+        if (isApiDataObject && documentData.extracted_fields) {
+            // Average of extracted fields confidence if available
+            const fields = Object.values(documentData.extracted_fields);
+            if (fields.length > 0) {
+                const sum = fields.reduce((acc, f) => acc + (f.confidence || 0), 0);
+                confidenceValue = Math.round((sum / fields.length) * 100);
+            }
+        } else {
+            confidenceValue = typeof doc?.confidence === 'number'
+                ? (doc.confidence < 1 ? Math.round(doc.confidence * 100) : doc.confidence)
+                : (doc?.conf || 0);
+        }
+
+        // Rules mapping
+        const rules = (isApiDataObject && documentData.validation_rules)
+            ? documentData.validation_rules
+            : (doc?.validation_rules || doc?.rules || []);
+
+        // Consolidated Metadata mapping
+        const metadataList = [];
+
+        // 1. Add Technical Metadata (Now First)
+        if (isApiDataObject && documentData.metadata) {
+            Object.entries(documentData.metadata).forEach(([key, val]) => {
+                metadataList.push({
+                    lbl: key.replace(/_/g, ' ').toUpperCase(),
+                    val: String(val),
+                    isTechnical: true
+                });
+            });
+        }
+
+        // 2. Add Extracted Fields (AI Results)
+        if (isApiDataObject && documentData.extracted_fields) {
+            Object.entries(documentData.extracted_fields).forEach(([key, info]) => {
+                const baseLabel = key.replace(/_/g, ' ').replace(/s$/, '').toUpperCase();
+                const val = info.value;
+
+                const explodeObject = (obj, prefix) => {
+                    return Object.entries(obj).map(([k, v]) => ({
+                        lbl: `${prefix} ${k.replace(/_/g, ' ').toUpperCase()}`.trim(),
+                        val: v === null ? "None" : String(v),
+                        isExtracted: true
+                    }));
+                };
+
+                if (Array.isArray(val)) {
+                    val.forEach((item, idx) => {
+                        const suffix = val.length > 1 ? ` (${idx + 1})` : "";
+                        if (typeof item === 'object' && item !== null) {
+                            metadataList.push(...explodeObject(item, baseLabel).map(card => ({
+                                ...card,
+                                lbl: `${card.lbl}${suffix}`
+                            })));
+                        } else {
+                            metadataList.push({ lbl: `${baseLabel}${suffix}`, val: String(item), isExtracted: true });
+                        }
+                    });
+                } else if (typeof val === 'object' && val !== null) {
+                    metadataList.push(...explodeObject(val, baseLabel));
+                } else {
+                    metadataList.push({
+                        lbl: key.replace(/_/g, ' ').toUpperCase(),
+                        val: String(val),
+                        isExtracted: true
+                    });
+                }
+            });
+        }
+
+        // Fallback for mock data or sparse API data
+        if (metadataList.length === 0) {
+            const fallback = (doc?.metadata || dvMetaData[selectedDocViewerIdx] || []);
+            metadataList.push(...fallback.map(m => ({ lbl: m.lbl || m.label, val: m.val || m.value })));
+        }
+
         return (
             <div className="flex flex-col h-[620px]">
 
                 {/* ─── Header bar ─────────────────────────────────────────── */}
                 <div className="flex items-stretch border-b border-gray-100 bg-white min-h-[48px]">
 
-                    {/* List button — mobile only, acts as left border-separated back btn */}
+                    {/* List button — mobile only */}
                     <button
                         onClick={() => setMobileDetail(false)}
                         className="md:hidden flex items-center text-[13px] font-semibold text-gray-500 border-r border-gray-200 bg-white hover:bg-gray-50 px-3 transition flex-shrink-0"
@@ -214,13 +356,13 @@ const Documents = () => {
                     {/* LEFT — filename */}
                     <div className="flex items-center min-w-0 py-2 px-0 flex-1 sm:ps-3 ps-0">
                         <span className="text-sm font-semibold text-gray-800 truncate">
-                            {doc?.file || "Select a document"}
+                            {doc?.file_name || doc?.file || doc?.filename || (doc?.pdf_url ? doc.pdf_url.split('/').pop() : "Select a document")}
                         </span>
                     </div>
 
-                    {/* RIGHT — tabs + AI badge (scrollable on mobile) */}
+                    {/* RIGHT — tabs */}
                     <div className="flex items-stretch flex-shrink-0 overflow-x-auto scrollbar-none">
-                        {doc && doc.st !== "NO" && tabs.map((t) => (
+                        {doc && isPresent && tabs.map((t) => (
                             <button
                                 key={t.key}
                                 onClick={() => setActiveTab(t.key)}
@@ -232,11 +374,10 @@ const Documents = () => {
                                 {t.label}
                             </button>
                         ))}
-
-                        {doc?.conf > 0 && (
+                        {confidenceValue > 0 && (
                             <div className="flex items-center px-3">
                                 <span className="text-[11px] font-bold text-primary border border-primary/30 bg-primary/5 px-2.5 py-1 rounded-full whitespace-nowrap">
-                                    AI: {doc.conf}%
+                                    AI: {confidenceValue}%
                                 </span>
                             </div>
                         )}
@@ -249,7 +390,7 @@ const Documents = () => {
 
                     {/* DOCUMENT tab */}
                     {activeTab === "document" && (
-                        doc && doc.st !== "NO" ? (
+                        doc && isPresent ? (
                             <div className="flex flex-col">
                                 <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 bg-white">
                                     <button onClick={handleZoomIn} title="Zoom in" className="p-1.5 rounded-md border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-primary transition"><ZoomIn size={13} /></button>
@@ -271,23 +412,25 @@ const Documents = () => {
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full py-16 bg-gray-50">
                                 <XCircle size={40} className="text-gray-200 mb-3" />
-                                <p className="text-sm font-semibold text-gray-400">{doc ? doc.name : "No document selected"}</p>
+                                <p className="text-sm font-semibold text-gray-400">{doc ? (doc.document_name || doc.name) : "No document selected"}</p>
                                 <p className="text-xs mt-1 text-gray-300">Document not yet uploaded</p>
                             </div>
                         )
                     )}
 
                     {/* METADATA tab */}
-                    {activeTab === "metadata" && doc && doc.st !== "NO" && (
+                    {activeTab === "metadata" && doc && isPresent && (
                         <div className="py-4 px-4">
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">
                                 Document Metadata
                             </p>
                             <div className="grid grid-cols-2 gap-3">
-                                {(dvMetaData[selectedDocViewerIdx] || []).map((m, i) => (
+                                {metadataList.map((m, i) => (
                                     <div key={i} className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{m.lbl}</p>
-                                        <p className="text-sm font-semibold text-gray-800 font-mono break-all">{m.val}</p>
+                                        <div className="flex justify-between items-start mb-1">
+                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{m.lbl}</p>
+                                        </div>
+                                        <p className="font-semibold text-gray-800 break-all text-sm font-mono">{m.val}</p>
                                     </div>
                                 ))}
                             </div>
@@ -295,21 +438,29 @@ const Documents = () => {
                     )}
 
                     {/* VALIDATION RULES tab */}
-                    {activeTab === "rules" && doc && doc.st !== "NO" && (
+                    {activeTab === "rules" && doc && isPresent && (
                         <div className="py-4 px-4">
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">
                                 Validation Results
                             </p>
                             <div className="flex flex-col gap-2">
-                                {doc.rules.map((r, ri) => (
-                                    <div key={ri} className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
-                                        <span className="text-gray-600 font-medium text-sm">{doc.ruleNames[ri]}</span>
-                                        <span className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full ${r ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"
-                                            }`}>
-                                            {r ? <><Check size={11} /> Pass</> : <><X size={11} /> Fail</>}
-                                        </span>
-                                    </div>
-                                ))}
+                                {rules.map((r, ri) => {
+                                    const isPass = (r.status === 'pass' || r === true);
+                                    const ruleName = r.name || doc?.ruleNames?.[ri] || "Rule";
+                                    const desc = r.description;
+                                    return (
+                                        <div key={ri} className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+                                            <div className="flex flex-col">
+                                                <span className="text-gray-600 font-medium text-sm">{ruleName}</span>
+                                                {desc && <span className="text-[11px] text-gray-400">{desc}</span>}
+                                            </div>
+                                            <span className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full ${isPass ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"
+                                                }`}>
+                                                {isPass ? <><Check size={11} /> Pass</> : <><X size={11} /> Fail</>}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
@@ -336,12 +487,6 @@ const Documents = () => {
                     {policy && <p className="text-sm text-gray-400 mt-0.5">{policy.customer_name} · {policy.policy_number}</p>}
                 </div>
                 <div className="flex gap-2">
-                    {/* <button
-                        onClick={() => dispatch(navigate("validation"))}
-                        className="flex items-center gap-1 text-xs font-semibold text-gray-500 border border-gray-200 bg-white hover:bg-gray-50 px-3 py-2 rounded-md transition"
-                    >
-                        <ArrowLeft size={11} /> Back to Validation
-                    </button> */}
                     <button
                         onClick={() => dispatch(navigate("checklist"))}
                         className="flex items-center gap-1 text-xs font-semibold text-gray-500 border border-gray-200 bg-white hover:bg-gray-50 px-3 py-2 rounded-md transition"
@@ -361,7 +506,7 @@ const Documents = () => {
                         </span>
                     </div>
                     <div className="overflow-y-auto max-h-[580px]">
-                        {docChecklist.map((d, i) => <DocListItem key={d.id} d={d} i={i} />)}
+                        {activeList.map((d, i) => <DocListItem key={d.id || i} d={d} i={i} />)}
                     </div>
                 </div>
                 <PreviewPane />
@@ -377,7 +522,7 @@ const Documents = () => {
                                 {validFiles.length} files
                             </span>
                         </div>
-                        <div>{docChecklist.map((d, i) => <DocListItem key={d.id} d={d} i={i} />)}</div>
+                        <div>{activeList.map((d, i) => <DocListItem key={d.id || i} d={d} i={i} />)}</div>
                     </>
                 )}
                 {mobileDetail && <PreviewPane />}

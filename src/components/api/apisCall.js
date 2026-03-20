@@ -91,3 +91,16 @@ export const getPolicyCheckList = async (setPolicyCheckList, id, dispatch) => {
         return { data: null, error: error.response?.data || error.message };
     }
 }
+export const getDocumentData = async (setDocumentData, id, dispatch) => {
+    try {
+        const response = await getApi(`/api/frontend/policies/${id}/documents/`, {
+            "X-Frontend-Token": "INSURVIA_FRONTEND_SECURE_TOKEN",
+        });
+        if (response?.data?.data) {
+            dispatch(setDocumentData(response?.data?.data || []))
+        }
+    } catch (error) {
+        console.log("FULL ERROR:", error.response);
+        return { data: null, error: error.response?.data || error.message };
+    }
+}

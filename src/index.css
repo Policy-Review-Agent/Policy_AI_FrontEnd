@@ -14,6 +14,14 @@ body {
     background: linear-gradient(to right, #5F6EFD, #A028FE, #6D20E4);
 }
 
+.bg-btn {
+    background: linear-gradient(to right, #b8b9c6, #8a8bf0, #ab97ca);
+}
+
+.bg-btn:hover {
+    background: linear-gradient(to right, #b2b4da, #a0a2fc, #ab8dda);
+}
+
 .box-shadow {
     box-shadow: rgba(100, 100, 111, 0.2) 0px 10px 10px 0px;
 }

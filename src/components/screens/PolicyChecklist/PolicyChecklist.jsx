@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { navigate } from "../../../store/slices/navigationSlice";
-import { selectCurrentPolicy, selectCurrentBatch, setChecklistSummary, setPolicyList, setPolicyCheckList } from "../../../store/slices/batchSlice";
+import { selectCurrentPolicy, selectCurrentBatch, setChecklistSummary, setPolicyList, setPolicyCheckList, setDocumentData } from "../../../store/slices/batchSlice";
 import { setSelectedDocViewerIdx } from "../../../store/slices/validationSlice";
-import { getChecklistSummary, getPolicyList, getPolicyCheckList } from "../../api/apisCall";
+import { getChecklistSummary, getPolicyList, getPolicyCheckList, getDocumentData } from "../../api/apisCall";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -21,12 +21,11 @@ const PolicyChecklist = () => {
   const dispatch = useDispatch();
   const policy = useSelector(selectCurrentPolicy);
   const batch = useSelector(selectCurrentBatch);
-  const { checklistSummary, policyCheckList } = useSelector((state) => state.batch);
-  
+  const { checklistSummary, policyCheckList, documentData } = useSelector((state) => state.batch);
+
   const present = (policyCheckList || []).filter((d) => (d.detected_status === "found" || d.st === "YES")).length;
   const missing = (policyCheckList || []).filter((d) => (d.detected_status === "missing" || d.st === "NO")).length;
   const partial = (policyCheckList || []).filter((d) => (d.detected_status === "partial" || d.st === "PARTIAL")).length;
-  console.log("checklicst", policyCheckList)
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -61,6 +60,8 @@ const PolicyChecklist = () => {
   ]
 
   const handleViewDoc = (idx) => {
+    const idStr = policy.policy_id;
+    getDocumentData(setDocumentData, idStr, dispatch);
     dispatch(setSelectedDocViewerIdx(idx));
     dispatch(navigate("documents"));
   };
@@ -89,7 +90,7 @@ const PolicyChecklist = () => {
         <div className="flex gap-2">
           <button
             onClick={() => dispatch(navigate("policyList"))}
-            className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 border border-gray-200 bg-white hover:bg-gray-50 px-3 py-1 rounded-md transition"
+            className="flex items-center gap-1 text-xs font-semibold text-gray-500 border border-gray-200 bg-white hover:bg-gray-50 px-3 py-2 rounded-md transition"
           >
             <ArrowLeft size={12} /> Back
           </button>

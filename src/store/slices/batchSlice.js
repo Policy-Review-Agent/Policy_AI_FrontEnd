@@ -13,6 +13,7 @@ const batchSlice = createSlice({
     policyList: [],
     checklistSummary: null,
     policyCheckList: [],
+    documentData: [],
   },
   reducers: {
     selectBatch: (state, action) => {
@@ -40,10 +41,23 @@ const batchSlice = createSlice({
     setPolicyCheckList: (state, action) => {
       state.policyCheckList = action.payload
     },
+    setDocumentData: (state, action) => {
+      state.documentData = action.payload
+    },
   },
 });
 
-export const { selectBatch, selectPolicy, setDashboardStats, setDashboardList, setPolicySummary, setPolicyList, setChecklistSummary, setPolicyCheckList } = batchSlice.actions;
+export const {
+  selectBatch,
+  selectPolicy,
+  setDashboardStats,
+  setDashboardList,
+  setPolicySummary,
+  setPolicyList,
+  setChecklistSummary,
+  setPolicyCheckList,
+  setDocumentData,
+} = batchSlice.actions;
 
 export const selectCurrentBatch = (s) =>
   s.batch.dashboardList.find((b) => b.batch_id === s.batch.selectedBatchId);

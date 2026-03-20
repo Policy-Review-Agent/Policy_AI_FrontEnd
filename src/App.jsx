@@ -8,21 +8,32 @@ import PolicyListing from "./components/screens/PolicyListing/PolicyListing";
 import PolicyChecklist from "./components/screens/PolicyChecklist/PolicyChecklist";
 import Validation from "./components/screens/Validation/Validation";
 import Documents from "./components/screens/Documents/Documents";
+import Login from "./components/screens/Login/Login";
 
 const SCREENS = {
-  dashboard:  Dashboard,
+  dashboard: Dashboard,
   policyList: PolicyListing,
-  checklist:  PolicyChecklist,
+  checklist: PolicyChecklist,
   validation: Validation,
-  documents:  Documents,
+  documents: Documents,
 };
 
 const App = () => {
   const screen = useSelector((s) => s.navigation.screen);
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const Screen = SCREENS[screen] || Dashboard;
 
   // Single source of truth for sidebar open state
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-bg overflow-hidden font-sans">
+        <Login />
+        <Toast />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-bg overflow-hidden">

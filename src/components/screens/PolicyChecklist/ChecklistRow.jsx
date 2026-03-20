@@ -32,15 +32,24 @@ const ChecklistRow = ({ doc, onViewDoc, index }) => {
         const isPass = typeof r === 'object' ? r.status === 'pass' : r;
         const ruleName = typeof r === 'object' ? r.name : (doc?.ruleNames?.[ri] || "Rule");
         return (
-          <div
-            key={ri}
-            title={ruleName}
-            className={`w-5 h-5 rounded-[4px] flex items-center justify-center ${isPass ? "bg-green-50" : "bg-red-50"
-              }`}
-          >
-            {isPass
-              ? <Check size={10} className="text-green-500" />
-              : <X size={10} className="text-red-500" />}
+          <div key={ri} className="relative group">
+            <div
+              className={`w-5 h-5 rounded-[4px] flex items-center justify-center transition-colors ${isPass ? "bg-green-50 hover:bg-green-100" : "bg-red-50 hover:bg-red-100"
+                }`}
+            >
+              {isPass
+                ? <Check size={10} className="text-green-500" />
+                : <X size={10} className="text-red-500" />}
+            </div>
+
+            {/* Custom Tooltip */}
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-50 pointer-events-none">
+              <div className="bg-gray-800 text-white text-[10px] font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap relative">
+                {ruleName}
+                {/* Tooltip pointer */}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] border-4 border-transparent border-t-gray-800"></div>
+              </div>
+            </div>
           </div>
         );
       })}
