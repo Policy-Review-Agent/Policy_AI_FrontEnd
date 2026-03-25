@@ -8,11 +8,11 @@ export const batches = [
 
 export const batchPolicies = {
     "BATCH-2024-031": [
-        { id: "P-10234", name: "John Carter", customerofficename: "Houston office", customercsr:"sarah R.", type: "Auto", soldDate: "Mar 3, 2026", docs: 16, aiSt: "Complete", val: "Failed" },
-        { id: "P-10235", name: "Maria Gonzalez", customerofficename: "Dallas Branch", customercsr:"Michael Lee", type: "Home", soldDate: "Mar 3, 2026", docs: 12, aiSt: "Complete",  val: "Failed" },
-        { id: "P-10236", name: "Robert Chen", customerofficename: "New York HQ", customercsr:"David Chen", type: "Commercial", soldDate: "Mar 2, 2026", docs: 24, aiSt: "Running",  val: "Failed" },
-        { id: "P-10237", name: "Amy Patel", customerofficename: "Houston office", customercsr:"sarah R.", type: "Auto", soldDate: "Mar 2, 2026", docs: 14, aiSt: "Complete",  val: "Pass" },
-        { id: "P-10238", name: "James Liu", customerofficename: "Dallas Branch", customercsr:"Linda Park", type: "Commercial", soldDate: "Mar 1, 2026", docs: 31, aiSt: "Failed", val: "Pass" },
-        { id: "P-10239", name: "Diana Foster", customerofficename: "New York HQ", customercsr:"Michael Lee", type: "Home", soldDate: "Mar 1, 2026", docs: 9, aiSt: "Complete", val: "Pass" },
+        { id: "P-10234", name: "John Carter", customerofficename: "Houston office", customercsr: "sarah R.", type: "Auto", soldDate: "Mar 3, 2026", docs: 16, aiSt: "Complete", val: "Failed" },
+        { id: "P-10235", name: "Maria Gonzalez", customerofficename: "Dallas Branch", customercsr: "Michael Lee", type: "Home", soldDate: "Mar 3, 2026", docs: 12, aiSt: "Complete", val: "Failed" },
+        { id: "P-10236", name: "Robert Chen", customerofficename: "New York HQ", customercsr: "David Chen", type: "Commercial", soldDate: "Mar 2, 2026", docs: 24, aiSt: "Running", val: "Failed" },
+        { id: "P-10237", name: "Amy Patel", customerofficename: "Houston office", customercsr: "sarah R.", type: "Auto", soldDate: "Mar 2, 2026", docs: 14, aiSt: "Complete", val: "Pass" },
+        { id: "P-10238", name: "James Liu", customerofficename: "Dallas Branch", customercsr: "Linda Park", type: "Commercial", soldDate: "Mar 1, 2026", docs: 31, aiSt: "Failed", val: "Pass" },
+        { id: "P-10239", name: "Diana Foster", customerofficename: "New York HQ", customercsr: "Michael Lee", type: "Home", soldDate: "Mar 1, 2026", docs: 9, aiSt: "Complete", val: "Pass" },
     ],
 };

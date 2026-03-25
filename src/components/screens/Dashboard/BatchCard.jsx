@@ -60,11 +60,16 @@ const BatchCard = ({ batch }) => {
             {/* Left content */}
             <div className="flex-1 min-w-0">
               {/* Batch ID + status */}
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="text-[12px] font-semibold text-primary font-mono">{batch.batch_id}</span>
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_MAP[batch.status] || "bg-gray-100 text-gray-500"}`}>
-                  {batch.status}
-                </span>
+              <div className="flex justify-between items-center gap-2 flex-wrap mb-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[12px] font-semibold text-primary font-mono">{batch.batch_number}</span>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_MAP[batch.status] || "bg-gray-100 text-gray-500"}`}>
+                    {batch.status}
+                  </span>
+                </div>
+                <div>
+                  <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
+                </div>
               </div>
               {/* Date */}
               <p className="text-[11px] text-gray-400 mb-2">{batch.batch_date}</p>
@@ -77,7 +82,7 @@ const BatchCard = ({ batch }) => {
             </div>
 
             {/* Right arrow */}
-            <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
+
           </div>
         </td>
       </tr>

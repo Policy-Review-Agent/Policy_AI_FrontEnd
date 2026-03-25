@@ -125,7 +125,7 @@ const PolicyListing = () => {
 
                 {/* ════ MOBILE CARDS inside the outer card (below md) ════ */}
                 <div className="md:hidden flex flex-col gap-3 p-3">
-                    {policies.map((p, i) => {
+                    {policyList.map((p, i) => {
                         const typeCls = TYPE_MAP[p.type] || "bg-gray-100 text-gray-500";
                         return (
                             <div
@@ -136,37 +136,37 @@ const PolicyListing = () => {
                                 {/* Card header */}
                                 <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-gray-100">
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-[12px] font-bold text-primary font-mono">{p.id}</span>
-                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${typeCls}`}>{p.type}</span>
+                                        <span className="text-[12px] font-bold text-primary font-mono">{p.policy_number}</span>
+                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${typeCls}`}>{p.policy_type}</span>
                                     </div>
                                     <ChevronRight size={15} className="text-gray-300 flex-shrink-0" />
                                 </div>
 
                                 {/* Card body */}
                                 <div className="px-4 pt-2.5 pb-3">
-                                    <p className="text-[13px] font-bold text-gray-800 truncate mb-0.5">{p.name}</p>
-                                    <p className="text-[11px] text-gray-400 truncate mb-3">{p.customerofficename} · {p.customercsr}</p>
+                                    <p className="text-[13px] font-bold text-gray-800 truncate mb-0.5">{p.customer_name}</p>
+                                    <p className="text-[11px] text-gray-400 truncate mb-3">{p.customer_office_name} · {p.customer_csr}</p>
 
                                     {/* Info grid */}
                                     <div className="grid grid-cols-2 gap-2 mb-3">
                                         <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
                                             <p className="text-[10px] text-gray-400 font-medium mb-0.5">Sold Date</p>
-                                            <p className="text-[12px] font-semibold text-gray-700">{p.soldDate}</p>
+                                            <p className="text-[12px] font-semibold text-gray-700">{p.sold_date}</p>
                                         </div>
                                         <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
                                             <p className="text-[10px] text-gray-400 font-medium mb-0.5">Documents</p>
-                                            <p className="text-[12px] font-bold text-gray-700">{p.docs}</p>
+                                            <p className="text-[12px] font-bold text-gray-700">{p.documents_count}</p>
                                         </div>
                                     </div>
 
                                     {/* Status badges */}
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                         <span className="text-[10px] text-gray-400">AI</span>
-                                        <Badge label={p.aiSt} map={AI_MAP} />
+                                        <Badge label={p.ai_status} map={AI_MAP} />
                                         {/* <span className="text-[10px] text-gray-400 ml-1">CK</span>
                                         <Badge label={p.ck} map={CK_MAP} /> */}
                                         <span className="text-[10px] text-gray-400 ml-1">VAL</span>
-                                        <Badge label={p.val} map={VAL_MAP} />
+                                        <Badge label={p.validation_status} map={VAL_MAP} />
                                     </div>
                                 </div>
                             </div>

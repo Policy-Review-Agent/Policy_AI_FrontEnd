@@ -36,8 +36,10 @@ const Sidebar = ({ onClose, onNavigate }) => {
     const user = useSelector((s) => s.auth.user);
 
     const handleNav = (id) => {
-        // If we have data, default to the first batch and first policy when navigating from Sidebar
-        if (dashboardList && dashboardList.length > 0) {
+        const isPolicyRelated = ["policyList", "checklist", "documents"].includes(id);
+
+        // If we have data, default to the first batch and first policy when navigating to policy-related screens from Sidebar
+        if (isPolicyRelated && dashboardList && dashboardList.length > 0) {
             const firstBatchId = dashboardList[0].batch_id;
             // Fetch the policy list and summary for the first batch
             getPolicySummary(setPolicySummary, firstBatchId, dispatch);

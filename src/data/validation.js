@@ -4,7 +4,7 @@ export const valDocs = [
     file: "DL_John_Primary.pdf",
     conf: 96,
     det: "YES",
-    rules:  [{ name: "US License", st: 1 }, { name: "Not Expired", st: 1 }, { name: "Signature Present", st: 0 }],
+    rules: [{ name: "US License", st: 1 }, { name: "Not Expired", st: 1 }, { name: "Signature Present", st: 0 }],
     fields: [{ label: "Signature", val: "Present (scanned)", conf: 94, st: "pending" }],
   },
   {
@@ -12,10 +12,10 @@ export const valDocs = [
     file: "AppForm_signed.pdf",
     conf: 99,
     det: "YES",
-    rules:  [{ name: "Signature Present", st: 1 }, { name: "Coverage Amount Valid", st: 1 }, { name: "Date Matches", st: 1 }],
+    rules: [{ name: "Signature Present", st: 1 }, { name: "Coverage Amount Valid", st: 1 }, { name: "Date Matches", st: 1 }],
     fields: [
       { label: "Signature", val: "John D. Carter", conf: 99, st: "pending" },
-      { label: "Amount",    val: "$500,000",        conf: 97, st: "pending" },
+      { label: "Amount", val: "$500,000", conf: 97, st: "pending" },
     ],
   },
   {
@@ -23,7 +23,7 @@ export const valDocs = [
     file: "PriorIns_Dec.pdf",
     conf: 88,
     det: "YES",
-    rules:  [{ name: "Carrier Name Present", st: 1 }, { name: "Policy # Format", st: 0 }, { name: "Expiry Date Valid", st: 1 }],
+    rules: [{ name: "Carrier Name Present", st: 1 }, { name: "Policy # Format", st: 0 }, { name: "Expiry Date Valid", st: 1 }],
     fields: [{ label: "Amount", val: "$300,000", conf: 85, st: "pending" }],
   },
   {
@@ -31,7 +31,7 @@ export const valDocs = [
     file: "Inspection_p1.pdf",
     conf: 62,
     det: "PARTIAL",
-    rules:  [{ name: "All Pages Present", st: 1 }, { name: "Inspector ID Valid", st: 0 }, { name: "Pass/Fail Marked", st: 0 }],
+    rules: [{ name: "All Pages Present", st: 1 }, { name: "Inspector ID Valid", st: 0 }, { name: "Pass/Fail Marked", st: 0 }],
     fields: [{ label: "Signature", val: "Present (partial)", conf: 58, st: "pending" }],
   },
 ];
@@ -89,10 +89,10 @@ export const mockDocHTML = [
 ];
 
 export const dvMetaData = [
-  [{ lbl: "File Name", val: "DL_John_Primary.pdf" }, { lbl: "Type", val: "PDF"   }, { lbl: "Pages", val: "1"      }, { lbl: "Uploaded", val: "Mar 3, 2026" }],
-  [{ lbl: "File Name", val: "AppForm_signed.pdf"  }, { lbl: "Type", val: "PDF"   }, { lbl: "Pages", val: "3"      }, { lbl: "Uploaded", val: "Mar 3, 2026" }],
-  [{ lbl: "File Name", val: "VehReg_2024.pdf"     }, { lbl: "Type", val: "PDF"   }, { lbl: "Pages", val: "1"      }, { lbl: "Uploaded", val: "Mar 3, 2026" }],
-  [{ lbl: "File Name", val: "PriorIns_Dec.pdf"    }, { lbl: "Type", val: "PDF"   }, { lbl: "Pages", val: "2"      }, { lbl: "Uploaded", val: "Mar 3, 2026" }],
-  [{ lbl: "File Name", val: "Utility_Bill.jpg"    }, { lbl: "Type", val: "Image" }, { lbl: "Pages", val: "1"      }, { lbl: "Uploaded", val: "Mar 3, 2026" }],
-  [{ lbl: "File Name", val: "Inspection_p1.pdf"   }, { lbl: "Type", val: "PDF"   }, { lbl: "Pages", val: "2 of 4" }, { lbl: "Uploaded", val: "Mar 2, 2026" }],
+  [{ lbl: "File Name", val: "DL_John_Primary.pdf" }, { lbl: "Type", val: "PDF" }, { lbl: "Pages", val: "1" }, { lbl: "Uploaded", val: "Mar 3, 2026" }],
+  [{ lbl: "File Name", val: "AppForm_signed.pdf" }, { lbl: "Type", val: "PDF" }, { lbl: "Pages", val: "3" }, { lbl: "Uploaded", val: "Mar 3, 2026" }],
+  [{ lbl: "File Name", val: "VehReg_2024.pdf" }, { lbl: "Type", val: "PDF" }, { lbl: "Pages", val: "1" }, { lbl: "Uploaded", val: "Mar 3, 2026" }],
+  [{ lbl: "File Name", val: "PriorIns_Dec.pdf" }, { lbl: "Type", val: "PDF" }, { lbl: "Pages", val: "2" }, { lbl: "Uploaded", val: "Mar 3, 2026" }],
+  [{ lbl: "File Name", val: "Utility_Bill.jpg" }, { lbl: "Type", val: "Image" }, { lbl: "Pages", val: "1" }, { lbl: "Uploaded", val: "Mar 3, 2026" }],
+  [{ lbl: "File Name", val: "Inspection_p1.pdf" }, { lbl: "Type", val: "PDF" }, { lbl: "Pages", val: "2 of 4" }, { lbl: "Uploaded", val: "Mar 2, 2026" }],
 ];

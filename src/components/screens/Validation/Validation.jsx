@@ -126,8 +126,8 @@ const Validation = () => {
                                 key={i}
                                 onClick={() => switchDoc(i)}
                                 className={`flex items-center gap-1.5 px-4 py-3 text-[13px] font-medium whitespace-nowrap border-b-2 -mb-px transition-all ${i === curDocIdx
-                                        ? "text-primary border-primary font-semibold"
-                                        : "text-gray-400 border-transparent hover:text-gray-700"
+                                    ? "text-primary border-primary font-semibold"
+                                    : "text-gray-400 border-transparent hover:text-gray-700"
                                     }`}
                             >
                                 <span className={`w-2 h-2 rounded-full ${dot}`} />

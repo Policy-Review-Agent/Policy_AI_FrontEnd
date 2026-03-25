@@ -104,7 +104,8 @@ const ChecklistRow = ({ doc, onViewDoc, index }) => {
                 <div className="flex justify-between items-center gap-2 min-w-0 flex-1  ">
                   <div className="flex gap-1 items-center">
                     <span className="text-[11px] text-gray-400 font-mono flex-shrink-0">
-                      {doc.id ? String(doc.id).slice(0, 2) : "00"}
+                      {/* {doc.id ? String(doc.id).slice(0, 2) : "00"} */}
+                      {index + 1}
                     </span>
                     <p className="text-[12px] font-semibold text-gray-800 truncate">{docName}</p>
                   </div>

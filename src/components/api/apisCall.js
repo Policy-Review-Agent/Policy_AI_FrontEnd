@@ -91,10 +91,11 @@ export const getPolicyCheckList = async (setPolicyCheckList, id, dispatch) => {
         return { data: null, error: error.response?.data || error.message };
     }
 }
-export const getDocumentData = async (setDocumentData, id, dispatch) => {
+export const getDocumentData = async (setDocumentData, id, dispatch, checklistId) => {
     try {
         const response = await getApi(`/api/frontend/policies/${id}/documents/`, {
             "X-Frontend-Token": "INSURVIA_FRONTEND_SECURE_TOKEN",
+            checklist_item_id: checklistId,
         });
         if (response?.data?.data) {
             dispatch(setDocumentData(response?.data?.data || []))
