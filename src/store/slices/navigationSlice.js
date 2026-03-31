@@ -7,8 +7,11 @@ const navigationSlice = createSlice({
     navigate: (state, action) => {
       state.screen = action.payload;
     },
-  },
+    validatorNavigate: (state, action) => {
+      state.screen = action.payload;
+    },
+  }
 });
 
-export const { navigate } = navigationSlice.actions;
+export const { navigate,validatorNavigate } = navigationSlice.actions;
 export default navigationSlice.reducer;

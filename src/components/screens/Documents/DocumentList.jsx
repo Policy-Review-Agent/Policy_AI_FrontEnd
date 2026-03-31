@@ -22,7 +22,7 @@ const DocListItem = ({ d, i, selectedDocViewerIdx, handleSelectDoc }) => {
     return (
         <button
             onClick={() => handleSelectDoc(i)}
-            className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left ${isActive ? "bg-gray-50 border-l-2 border-l-primary" : ""}`}
+            className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left ${isActive ? "bg-gray-100 border-l-2 border-l-primary" : ""}`}
         >
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${bg}`}>
                 <Icon size={13} className={ic} />

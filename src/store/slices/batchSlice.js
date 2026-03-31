@@ -14,6 +14,7 @@ const batchSlice = createSlice({
     checklistSummary: null,
     policyCheckList: [],
     documentData: [],
+    insureTypeIndex: 0,
   },
   reducers: {
     selectBatch: (state, action) => {
@@ -44,6 +45,9 @@ const batchSlice = createSlice({
     setDocumentData: (state, action) => {
       state.documentData = action.payload
     },
+    setInsureTypeIndex: (state, action) => {
+      state.insureTypeIndex = action.payload
+    }
   },
 });
 
@@ -57,6 +61,7 @@ export const {
   setChecklistSummary,
   setPolicyCheckList,
   setDocumentData,
+  setInsureTypeIndex,
 } = batchSlice.actions;
 
 export const selectCurrentBatch = (s) =>

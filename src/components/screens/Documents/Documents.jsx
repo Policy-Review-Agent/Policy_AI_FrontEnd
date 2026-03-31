@@ -87,7 +87,7 @@ const Documents = () => {
 
     return (
         <div className="min-w-0 w-full">
-            <Breadcrumb crumbs={[{ label: "Dashboard", screen: "dashboard" }, { label: "Policy Checklist", screen: "checklist" }, { label: "Document Viewer" }]} />
+            <Breadcrumb crumbs={[{ label: "Dashboard", screen: "dashboard" }, { label: "Policy Checklist", screen: "checklist" }, { label: "Document" }]} />
 
             <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
                 <div>

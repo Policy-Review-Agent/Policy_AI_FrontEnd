@@ -2,13 +2,15 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { Menu } from "lucide-react";
 import { selectCurrentBatch, selectCurrentPolicy } from "../../store/slices/batchSlice";
-
+import { insureType } from "../screens/ValidatorSetup/ValidatorSetup";
 const TITLES = {
   dashboard: "Dashboard",
   policyList: "Policy List",
   checklist: "Policy Checklist",
   // validation: "Validation",
   documents: "Document Viewer",
+  validatorsetup: "Validator Setup",
+  vadlidateInsurance: "Validator Setup",
 };
 
 // sidebarOpen lets us optionally style the button differently when open
@@ -16,11 +18,12 @@ const Topbar = ({ onMenuClick, sidebarOpen }) => {
   const screen = useSelector((s) => s.navigation.screen);
   const batch = useSelector(selectCurrentBatch);
   const policy = useSelector(selectCurrentPolicy);
-
+  const {insureTypeIndex} = useSelector((state) => state.batch);
+   const selectedData = insureType.find((item) => item.id === insureTypeIndex ) || insureType[0];
   const badge =
     screen === "dashboard" ? "" :
-      screen === "policyList" ? batch?.batch_number :
-        policy?.policy_number ?? "";
+      screen === "policyList" ? batch?.batch_number : (screen === "checklist" || screen === "documents") ?
+        policy?.policy_number : screen === "validatorsetup" ? "Policy Config" : screen === "vadlidateInsurance" ? selectedData.title : "";
 
   return (
     <header className="h-14 bg-white border-b-[1.3px] border-gray-200 flex items-center px-4 py-3 gap-3 sticky top-0 z-20 shadow-md">

@@ -9,13 +9,17 @@ import PolicyChecklist from "./components/screens/PolicyChecklist/PolicyChecklis
 import Validation from "./components/screens/Validation/Validation";
 import Documents from "./components/screens/Documents/Documents";
 import Login from "./components/screens/Login/Login";
+import ValidatorSetup from "./components/screens/ValidatorSetup/ValidatorSetup"
+import AutoInsurance from "./components/screens/ValidatorSetup/AutoInsurance";
 
 const SCREENS = {
   dashboard: Dashboard,
   policyList: PolicyListing,
   checklist: PolicyChecklist,
-  validation: Validation,
+  // validation: Validation,
   documents: Documents,
+  validatorsetup: ValidatorSetup,
+  vadlidateInsurance: AutoInsurance,
 };
 
 const App = () => {

@@ -16,3 +16,5 @@ export const batchPolicies = {
         { id: "P-10239", name: "Diana Foster", customerofficename: "New York HQ", customercsr: "Michael Lee", type: "Home", soldDate: "Mar 1, 2026", docs: 9, aiSt: "Complete", val: "Pass" },
     ],
 };
+
+ 
