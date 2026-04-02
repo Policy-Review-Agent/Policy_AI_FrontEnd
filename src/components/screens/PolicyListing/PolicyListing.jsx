@@ -87,7 +87,7 @@ const PolicyListing = () => {
                             {policyList.map((p, i) => (
                                 <tr key={p.id} onClick={() => handleOpenPolicy(i)}
                                     className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors last:border-b-0">
-                                    <td className="px-4 py-1.5 text-[13px] font-semibold text-primary ">{p.policy_number}</td>
+                                    <td className="px-4 py-1.5 text-[13px] font-semibold text-gray-800">{p.policy_number}</td>
                                     <td className="px-4 py-1.5 max-w-[140px]">
                                         <div className="relative group w-full">
                                             <p className="text-[13px] font-semibold text-gray-800 truncate">{p.customer_name}</p>
@@ -97,7 +97,7 @@ const PolicyListing = () => {
                                         </div>
                                     </td>
                                     <td className="px-4 py-1.5 text-[13px] font-semibold text-gray-800">{p.customer_office_name}</td>
-                                    <td className="px-4 py-1.5 text-[13px] font-semibold text-gray-800">{p.customer_csr}</td>
+                                    <td className="px-4 py-1.5 text-[13px] font-semibold text-gray-800 truncate">{p.customer_csr}</td>
                                     <td className="px-4 py-1.5 text-[13px] text-gray-500 truncate">{p.policy_type}</td>
                                     <td className="px-4 py-1.5 max-w-[140px]">
                                         <div className="relative group w-full">

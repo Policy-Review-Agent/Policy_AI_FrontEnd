@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { validatorNavigate } from "../../../store/slices/navigationSlice";
 import ValidatorBreadcrumb from "./ValidatorBreadcrumb";
 import FileEidt from "../../../../public/assets/images/FileEdit.png"
@@ -11,22 +11,35 @@ import {
     File,
     FileText,
     ArrowRightSquare,
-    ArrowRight
+    ArrowRight,ShieldCheck 
 } from "lucide-react";
 import { useSelector } from "react-redux";
 const AutoInsurance = () => {
     const [activeTab, setActiveTab] = useState("documents");
-    const {insureTypeIndex} = useSelector((state) => state.batch);
+    const tabBarRef = useRef(null);
+    const activeTabRef = useRef(null);
+    const { insureTypeIndex } = useSelector((state) => state.batch);
     const tabs = [
         { key: "documents", label: "Document Configuration", Icon: FileText },
-        { key: "validation", label: "Cross Validation Rules", Icon: Shield },
+        { key: "validation", label: "Cross Validation Rules", Icon: ShieldCheck  },
     ];
-    const selectedData = insureType.find((item) => item.id === insureTypeIndex ) || insureType[0];
+
+    useEffect(() => {
+        if (activeTabRef.current && tabBarRef.current) {
+            activeTabRef.current.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest",
+                inline: "center",
+            });
+        }
+    }, [activeTab]);
+
+    const selectedData = insureType.find((item) => item.id === insureTypeIndex) || insureType[0];
     return (
         <>
             <div className="min-w-0 w-full">
                 <ValidatorBreadcrumb crumbs={[{ label: "ValidatorSetup", screen: "validatorsetup", }, { label: selectedData.title }]} />
-                <div className="md:grid grid-cols bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden min-h-auto p-4  mt-3">
+                <div className="md:grid grid-cols bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden min-h-auto p-4 mt-3">
                     <div className="flex flex-wrap gap-2 justify-between items-center">
 
                         <div className="flex flex-row gap-2 items-center">
@@ -66,22 +79,23 @@ const AutoInsurance = () => {
                     </div>
                 </div>
                 <div className="bg-white border border-gray-200 rounded-sm w-full mt-3">
-                    {/* Tab bar */}
-                    <div className="flex items-stretch border-b border-gray-200 overflow-x-auto"
+                    <div
+                        ref={tabBarRef}
+                        className="flex items-stretch border-b border-gray-200 overflow-x-auto"
                         style={{ scrollbarWidth: "none" }}
                     >
                         {tabs.map((t) => (
                             <button
                                 key={t.key}
+                                ref={activeTab === t.key ? activeTabRef : null}  
                                 onClick={() => setActiveTab(t.key)}
                                 className={`relative flex items-center gap-1.5 px-4 py-3 text-[13px] font-semibold whitespace-nowrap flex-shrink-0 transition-colors duration-200 ${activeTab === t.key
-                                    ? "text-[#6B55E8]"
-                                    : "text-gray-400 hover:text-gray-600"
+                                        ? "text-[#6B55E8]"
+                                        : "text-gray-400 hover:text-gray-600"
                                     }`}
                             >
                                 <t.Icon size={13} className="flex-shrink-0" />
                                 {t.label}
-                                {/* Animated underline slides between tabs */}
                                 {activeTab === t.key && (
                                     <motion.span
                                         layoutId="activeTab"

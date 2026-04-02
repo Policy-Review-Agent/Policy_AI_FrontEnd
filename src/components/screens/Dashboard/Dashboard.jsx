@@ -61,7 +61,7 @@ const Dashboard = () => {
                     {STATS_CONFIG.map(({ key, label, sub, Icon, color }) => (
                         <div
                             key={key}
-                            className="flex justify-start items-center gap-5 bg-white border border-gray-200 rounded-xl ps-5 py-4 shadow-md hover:shadow-lg transition-shadow cursor-pointer pe-0.5"
+                            className="flex justify-start items-center gap-5 bg-white border border-gray-200 rounded-xl ps-5 py-4 shadow-sm hover:shadow-lg transition-shadow cursor-pointer pe-0.5"
                         >
                             <div className={`w-9 h-9 rounded-lg flex items-center justify-center  flex-shrink-0 ${color}`}>
                                 <Icon size={16} />

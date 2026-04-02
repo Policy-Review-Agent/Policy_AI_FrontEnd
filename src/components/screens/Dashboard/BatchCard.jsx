@@ -30,9 +30,9 @@ const BatchCard = ({ batch }) => {
         onClick={handleOpen}
         className="hidden md:table-row border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors last:border-b-0"
       >
-        <td className="px-4 py-1.5 text-[13px] font-semibold text-primary font-mono">{batch.batch_number}</td>
+        <td className="px-4 py-1.5 text-[13px] font-bold text-gray-700">{batch.batch_number}</td>
         <td className="px-4 py-1.5 text-[13px] text-gray-600">{batch.batch_date}</td>
-        <td className="px-4 py-1.5 text-[13px] font-bold text-gray-800">{batch.total_policies}</td>
+        <td className="px-4 py-1.5 text-[13px] font-bold text-gray-700">{batch.total_policies}</td>
         <td className="px-4 py-1.5 text-[13px] font-semibold text-green-600">{batch.processed}</td>
         <td className="px-4 py-1.5 text-[13px] font-semibold text-amber-500">{batch.pending}</td>
         <td className="px-4 py-1.5">

@@ -15,19 +15,21 @@ import {
     Folder,
     ArrowLeftSquare,
     LogOut,
+    Upload ,
 } from "lucide-react";
 import { getPolicySummary, getPolicyList } from "../api/apisCall";
 import { logout } from "../../store/slices/authSlice";
 
 const NAV_ITEMS = [
-    { id: "dashboard",      label: "Dashboard",       Icon: LayoutGrid,  children: [] },
-    { id: "policyList",     label: "Policy List",      Icon: FileText,    children: [] },
-    { id: "checklist",      label: "Policy Checklist", Icon: CheckCircle, children: [] },
-    { id: "documents",      label: "Documents",        Icon: Folder,      children: [] },
+    { id: "dashboard", label: "Dashboard", Icon: LayoutGrid, children: [] },
+    { id: "policyList", label: "Policy List", Icon: FileText, children: [] },
+    { id: "checklist", label: "Policy Checklist", Icon: CheckCircle, children: [] },
+    { id: "documents", label: "Documents", Icon: Folder, children: [] },
     {
         id: "validatorsetup", label: "Validator Setup",  Icon: Shield,
         children: ["vadlidateInsurance", "homeInsurance", "commercialInsurance"],
     },
+    { id: "uploadfile",label: "Upload File", Icon: Upload, children: [] },
 ];
 
 const Sidebar = ({ onClose, onNavigate }) => {

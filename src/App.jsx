@@ -11,6 +11,7 @@ import Documents from "./components/screens/Documents/Documents";
 import Login from "./components/screens/Login/Login";
 import ValidatorSetup from "./components/screens/ValidatorSetup/ValidatorSetup"
 import AutoInsurance from "./components/screens/ValidatorSetup/AutoInsurance";
+import UploadFile from "./components/screens/UploadFile/UploadFile";
 
 const SCREENS = {
   dashboard: Dashboard,
@@ -20,6 +21,7 @@ const SCREENS = {
   documents: Documents,
   validatorsetup: ValidatorSetup,
   vadlidateInsurance: AutoInsurance,
+  uploadfile: UploadFile,
 };
 
 const App = () => {
@@ -72,7 +74,7 @@ const App = () => {
           sidebarOpen={sidebarOpen}
           onMenuClick={() => setSidebarOpen((o) => !o)}
         />
-        <main className="flex-1 p-5">
+        <main className="flex-1 p-5 bg-gray-50">
           <Screen />
         </main>
       </div>
