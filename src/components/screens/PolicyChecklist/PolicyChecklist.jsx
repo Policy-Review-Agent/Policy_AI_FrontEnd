@@ -61,10 +61,7 @@ const PolicyChecklist = () => {
 
   const handleViewDoc = (idx) => {
     const doc = policyCheckList[idx];
-    console.log("Viewing doc:", doc);
     const checklistItemId = doc.id || doc.checklist_item_id || doc.checklist_id;
-    console.log("Selected checklistItemId:", checklistItemId);
-    
     const idStr = policy.policy_id;
     getDocumentData(setDocumentData, idStr, dispatch, checklistItemId);
     dispatch(setSelectedDocViewerIdx(idx));

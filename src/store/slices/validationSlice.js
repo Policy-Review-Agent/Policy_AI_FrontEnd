@@ -1,12 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { valDocs as initialDocs } from "../../data/validation";
+// import { valDocs as initialDocs } from "../../data/validation";
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
 const validationSlice = createSlice({
     name: "validation",
     initialState: {
-        docs: clone(initialDocs),
+        docs: clone([]), // initialDocs
         curDocIdx: 0,
         selectedDocViewerIdx: 0,
         zoom: 1,

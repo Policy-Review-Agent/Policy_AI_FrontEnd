@@ -10,7 +10,7 @@ import { navigate } from "../../../store/slices/navigationSlice";
 import { selectCurrentPolicy, selectPolicy } from "../../../store/slices/batchSlice";
 import { showToast } from "../../../store/slices/toastSlice";
 import { selectCurrentPolicies } from "../../../store/slices/batchSlice";
-import { mockDocHTML } from "../../../data/validation";
+// import { mockDocHTML } from "../../../data/validation";
 import {
     ArrowLeft,
     ArrowRight,
@@ -31,7 +31,7 @@ const Validation = () => {
     const { docs, curDocIdx, zoom } = useSelector((s) => s.validation);
 
     const doc = docs[curDocIdx];
-
+    const mockDocHTML = []
     const switchDoc = (i) => dispatch(setValDocIdx(i));
     const handleZoomIn = () => dispatch(setZoom(Math.min(zoom + 0.2, 2)));
     const handleZoomOut = () => dispatch(setZoom(Math.max(zoom - 0.2, 0.5)));

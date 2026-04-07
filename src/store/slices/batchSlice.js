@@ -1,11 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { batches, batchPolicies } from "../../data/batches";
 
 const batchSlice = createSlice({
   name: "batch",
   initialState: {
-    batches,
-    selectedBatchId: batches[0].id,
+    batches: [],
+    selectedBatchId: null,
     selectedPolicyIdx: 0,
     dashboardStats: null,
     dashboardList: [],

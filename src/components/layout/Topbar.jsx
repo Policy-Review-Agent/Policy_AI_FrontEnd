@@ -11,7 +11,7 @@ const TITLES = {
   documents: "Document Viewer",
   validatorsetup: "Validator Setup",
   vadlidateInsurance: "Validator Setup",
-  uploadfile: "Upload File",
+  uploadfile: "Upload CSV",
 };
 
 // sidebarOpen lets us optionally style the button differently when open

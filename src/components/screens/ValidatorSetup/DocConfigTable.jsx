@@ -239,8 +239,8 @@ const ExtractFieldsInput = ({ fields, onChange }) => {
 
             {showSug && (
                 <div className={`absolute z-50 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden ${dropUpward
-                        ? "bottom-full mb-1"   // opens upward
-                        : "top-full mt-1"      // opens downward (default)
+                    ? "bottom-full mb-1"   // opens upward
+                    : "top-full mt-1"      // opens downward (default)
                     }`}>
                     <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 bg-gray-50">
                         <Search size={12} className="text-gray-500 flex-shrink-0" />
@@ -406,7 +406,8 @@ const DocConfigTable = () => {
             setDocs((p) => p.map((d) => d.id === id ? { ...d, name, status, description, fields } : d));
             addToast("success", "Document Updated", `${name} updated successfully.`);
         } else {
-            setDocs((p) => [...p, { id: Date.now(), name, status, description, fields }]);
+            const nextId = docs.length > 0 ? Math.max(...docs.map((d) => d.id)) + 1 : 1;
+            setDocs((p) => [...p, { id: nextId, name, status, description, fields }]);
             addToast("success", "Document Added", `${name} added.`);
         }
     };
@@ -531,7 +532,7 @@ const DocConfigTable = () => {
             </div>
 
             {/* Footer */}
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex flex-wrap sm:justify-end justify-start gap-3 pt-2">
                 <button className="text-[13px] font-semibold text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 px-5 py-2 rounded-lg transition-all">Discard Changes</button>
                 <button className="flex items-center gap-2 text-[13px] font-semibold text-white bg-[#6B55E8] hover:bg-[#5a45d4] px-5 py-2 rounded-lg transition-all">
                     <Check size={13} /> Save Configuration

@@ -609,7 +609,7 @@ const CrossValidationRuleTable = () => {
             </div>
 
             {/* Footer */}
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex flex-wrap sm:justify-end justify-start gap-3 pt-2">
                 <button className="text-[13px] font-semibold text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 px-5 py-2 rounded-lg transition-all">Discard Changes</button>
                 <button className="flex items-center gap-2 text-[13px] font-semibold text-white bg-[#6B55E8] hover:bg-[#5a45d4] px-5 py-2 rounded-lg transition-all">
                     <Check size={13} /> Save Configuration

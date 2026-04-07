@@ -11,7 +11,7 @@ import {
     File,
     FileText,
     ArrowRightSquare,
-    ArrowRight,ShieldCheck 
+    ArrowRight, ShieldCheck
 } from "lucide-react";
 import { useSelector } from "react-redux";
 const AutoInsurance = () => {
@@ -21,7 +21,7 @@ const AutoInsurance = () => {
     const { insureTypeIndex } = useSelector((state) => state.batch);
     const tabs = [
         { key: "documents", label: "Document Configuration", Icon: FileText },
-        { key: "validation", label: "Cross Validation Rules", Icon: ShieldCheck  },
+        { key: "validation", label: "Cross Validation Rules", Icon: ShieldCheck },
     ];
 
     useEffect(() => {
@@ -45,8 +45,20 @@ const AutoInsurance = () => {
                         <div className="flex flex-row gap-2 items-center">
 
                             {/* Icon */}
-                            <div className={`${selectedData.bg} w-fit p-2.5 rounded-xl shadow-sm`}>
-                                <selectedData.icon size={15} />
+                            {/* Icon — use Shield always, bg from selectedData.bg or bgIdx fallback */}
+                            <div
+                                className={`w-fit p-2.5 rounded-xl shadow-sm ${selectedData.bg ||
+                                    [
+                                        "bg-gradient-to-br from-[#8B7FF5] to-[#6B55E8]",
+                                        "bg-gradient-to-br from-[#5BC8F5] to-[#0DA89B]",
+                                        "bg-gradient-to-br from-[#F97A2A] to-[#E8450A]",
+                                        "bg-gradient-to-br from-[#F472B6] to-[#EC4899]",
+                                        "bg-gradient-to-br from-[#34D399] to-[#059669]",
+                                        "bg-gradient-to-br from-[#60A5FA] to-[#2563EB]",
+                                    ][(selectedData.bgIdx ?? 0) % 6]
+                                    }`}
+                            >
+                                <Shield size={15} className="text-white" />
                             </div>
 
                             {/* Title + Description */}
@@ -87,11 +99,11 @@ const AutoInsurance = () => {
                         {tabs.map((t) => (
                             <button
                                 key={t.key}
-                                ref={activeTab === t.key ? activeTabRef : null}  
+                                ref={activeTab === t.key ? activeTabRef : null}
                                 onClick={() => setActiveTab(t.key)}
                                 className={`relative flex items-center gap-1.5 px-4 py-3 text-[13px] font-semibold whitespace-nowrap flex-shrink-0 transition-colors duration-200 ${activeTab === t.key
-                                        ? "text-[#6B55E8]"
-                                        : "text-gray-400 hover:text-gray-600"
+                                    ? "text-[#6B55E8]"
+                                    : "text-gray-400 hover:text-gray-600"
                                     }`}
                             >
                                 <t.Icon size={13} className="flex-shrink-0" />
