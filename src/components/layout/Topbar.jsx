@@ -2,7 +2,7 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { Menu } from "lucide-react";
 import { selectCurrentBatch, selectCurrentPolicy } from "../../store/slices/batchSlice";
-import { insureType } from "../screens/ValidatorSetup/ValidatorSetup";
+// import { insureType } from "../screens/ValidatorSetup/ValidatorSetup";
 const TITLES = {
   dashboard: "Dashboard",
   policyList: "Policy List",
@@ -20,11 +20,12 @@ const Topbar = ({ onMenuClick, sidebarOpen }) => {
   const batch = useSelector(selectCurrentBatch);
   const policy = useSelector(selectCurrentPolicy);
   const {insureTypeIndex} = useSelector((state) => state.batch);
-   const selectedData = insureType.find((item) => item.id === insureTypeIndex ) || insureType[0];
+  const { validatorlist } = useSelector((state) => state.validatorSetup);
+   const selectedData = validatorlist?.[insureTypeIndex] || validatorlist?.[0];
   const badge =
     screen === "dashboard" ? "" :
       screen === "policyList" ? batch?.batch_number : (screen === "checklist" || screen === "documents") ?
-        policy?.policy_number : screen === "validatorsetup" ? "Policy Config" : screen === "vadlidateInsurance" ? selectedData.title : "";
+        policy?.policy_number : screen === "validatorsetup" ? "Policy Config" : screen === "vadlidateInsurance" ? selectedData.name : "";
 
   return (
     <header className="h-14 bg-white border-b-[1.3px] border-gray-200 flex items-center px-4 py-3 gap-3 sticky top-0 z-20 shadow-md">

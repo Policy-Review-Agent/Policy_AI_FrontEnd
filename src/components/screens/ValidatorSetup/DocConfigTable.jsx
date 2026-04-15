@@ -1,43 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { X, Check, ChevronDown, Search, AlertTriangle, Pencil, Trash2 } from "lucide-react";
-
-const INITIAL_DOCS = [
-    { id: 1, name: "Insurance Receipt", status: "Required", fields: ["client_name", "policy_number", "payment_amount", "payment_date", "receipt_id", "insurer_name"] },
-    { id: 2, name: "Policy Declarations", status: "Required", fields: ["named_insured", "policy_number", "policy_term_start", "policy_term_end", "coverage_amount", "deductible", "agent_name"] },
-    { id: 3, name: "Insurance Application", status: "Required", fields: ["named_insured", "policy_number", "number_of_drivers", "number_of_vehicles", "address", "date_of_birth"] },
-    { id: 4, name: "Coverage Acknowledgement", status: "Required", fields: ["agent_fee_amount", "signatures"] },
-    { id: 5, name: "Driver Exclusion Endorsement", status: "Optional", fields: ["excluded_drivers", "policy_number", "signatures"] },
-    { id: 6, name: "Vehicle Release Authorization", status: "Optional", fields: ["insured_name", "policy_number", "effective_date", "vehicles_listed", "authorization_code"] },
-    { id: 7, name: "Proof of Insurance", status: "Required", fields: ["policy_number", "insured_name", "effective_date", "expiration_date"] },
-    { id: 8, name: "Loss Payee Endorsement", status: "Required", fields: ["lienholder_name", "policy_number", "vehicle_vin", "effective_date"] },
-    { id: 9, name: "Umbrella Policy", status: "Optional", fields: ["policy_number", "coverage_limit", "insured_name"] },
-    { id: 10, name: "Vehicle Record", status: "Required", fields: ["owner_name", "vin_number", "vehicle_make", "vehicle_model_year", "license_plate"] },
-    { id: 11, name: "Identification Document", status: "Required", fields: ["full_name", "id_type", "signatures"] },
-    { id: 12, name: "Privacy Policy", status: "Required", fields: ["signatures"] },
-    { id: 13, name: "Passport", status: "Required", fields: ["full_name", "passport_number", "nationality", "expiration_date", "date_of_birth"] },
-    { id: 14, name: "Driver License", status: "Required", fields: ["full_name", "license_number", "nationality", "expiration_date", "state"] },
-];
-
-const FIELD_SUGGESTIONS = [
-    "client_name", "policy_number", "payment_amount", "payment_date", "receipt_id",
-    "insurer_name", "named_insured", "policy_term_start", "policy_term_end",
-    "coverage_amount", "deductible", "agent_name", "number_of_drivers",
-    "number_of_vehicles", "address", "date_of_birth", "agent_fee_amount",
-    "signatures", "excluded_drivers", "insured_name", "effective_date",
-    "vehicles_listed", "authorization_code", "expiration_date", "lienholder_name",
-    "vehicle_vin", "coverage_limit", "owner_name", "vin_number", "vehicle_make",
-    "vehicle_model_year", "license_plate", "full_name", "id_type", "passport_number",
-    "nationality", "license_number", "state", "payment_method", "premium_amount",
-];
-
-const DOC_TYPE_OPTIONS = [
-    "Insurance Receipt", "Policy Declarations", "Insurance Application",
-    "Coverage Acknowledgement", "Driver Exclusion Endorsement",
-    "Vehicle Release Authorization", "Proof of Insurance",
-    "Loss Payee Endorsement", "Umbrella Policy", "Vehicle Record",
-    "Identification Document", "Privacy Policy", "Passport", "Driver License",
-    "Custom Document",
-];
+import { useDispatch, useSelector } from "react-redux";
+import { setValidatorDocDetails, setPolicyExtractedFields } from "../../../store/slices/validatorSetupSlice";
+import { createValidatorDocDetails, getValidatorDocDetails, deleteValidatorDocDetails, updateValidatorDocDetails, getPolicyExtractedFields } from "../../api/validatorApiCall";
 
 const MAX_VISIBLE_FIELDS = 2;
 
@@ -74,7 +39,7 @@ const ConfirmDialog = ({ doc, onConfirm, onCancel }) => (
                 </div>
             </div>
             <p className="text-[13px] text-gray-600 leading-relaxed">
-                Are you sure you want to remove <span className="font-semibold text-gray-800">"{doc?.name}"</span>?
+                Are you sure you want to remove <span className="font-semibold text-gray-800">"{doc?.display_name}"</span>?
             </p>
             <div className="flex items-center justify-end gap-3">
                 <button onClick={onCancel} className="text-[13px] font-semibold text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 px-4 py-2 rounded-lg transition-all">Cancel</button>
@@ -172,6 +137,7 @@ const ExtraFieldsBadge = ({ fields }) => {
 
 // ── Extract Fields Input ──────────────────────────────────────────────────────
 const ExtractFieldsInput = ({ fields, onChange }) => {
+    const { policyExtractedFields } = useSelector((state) => state.validatorSetup)
     const [inputVal, setInputVal] = useState("");
     const [showSug, setShowSug] = useState(false);
     const [dropUpward, setDropUpward] = useState(false);
@@ -194,7 +160,7 @@ const ExtractFieldsInput = ({ fields, onChange }) => {
         setShowSug(true);
     };
 
-    const suggestions = FIELD_SUGGESTIONS.filter(
+    const suggestions = policyExtractedFields.filter(
         (s) => s.toLowerCase().includes(inputVal.toLowerCase()) && !fields.includes(s)
     ).slice(0, 10);
 
@@ -272,6 +238,8 @@ const ExtractFieldsInput = ({ fields, onChange }) => {
 
 // ── Add / Edit Panel ──────────────────────────────────────────────────────────
 const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
+    const { selectedPolicyId, documentTypes, policyExtractedFields } = useSelector((state) => state.validatorSetup)
+    const dispatch = useDispatch();
     const isEdit = !!editDoc;
     const [docType, setDocType] = useState("");
     const [required, setRequired] = useState(true);
@@ -280,12 +248,25 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
     const [dropOpen, setDropOpen] = useState(false);
     const [docSearch, setDocSearch] = useState("");
     const dropRef = useRef(null);
+    const [loading, setLoading] = useState(false);
+
 
     useEffect(() => {
         if (open) {
-            if (editDoc) { setDocType(editDoc.name); setRequired(editDoc.status === "Required"); setDescription(editDoc.description || ""); setFields(editDoc.fields || []); }
-            else { setDocType(""); setRequired(true); setDescription(""); setFields([]); }
-            setDropOpen(false); setDocSearch("");
+            if (editDoc) {
+                // ← use API field names: display_name, required, extract_fields
+                setDocType(editDoc.display_name || "");
+                setRequired(editDoc.required === true);
+                setDescription(editDoc.description || "");
+                setFields(editDoc.extract_fields || []);
+            } else {
+                setDocType("");
+                setRequired(true);
+                setDescription("");
+                setFields([]);
+            }
+            setDropOpen(false);
+            setDocSearch("");
         }
     }, [open, editDoc]);
 
@@ -296,12 +277,53 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
     }, []);
 
     const canSave = docType.trim() !== "" && fields.length > 0;
-    const filteredDocs = DOC_TYPE_OPTIONS.filter((d) => d.toLowerCase().includes(docSearch.toLowerCase()));
+    const filteredDocs = documentTypes?.filter((d) =>
+        d.display_name.toLowerCase().includes(docSearch.toLowerCase())
+    ) || [];
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!canSave) return;
-        onSave({ id: editDoc?.id, name: docType, status: required ? "Required" : "Optional", description, fields });
-        onClose();
+
+        try {
+            setLoading(true); // ✅ start loading
+
+            const payload = {
+                document_type: docType,
+                display_name: docType,
+                required: required,
+                description,
+                extract_fields: fields,
+            };
+
+            if (isEdit && editDoc?.id) {
+                // UPDATE
+                await updateValidatorDocDetails(editDoc.id, payload);
+            } else {
+                // CREATE
+                await createValidatorDocDetails(payload, selectedPolicyId);
+            }
+
+            await getValidatorDocDetails(
+                setValidatorDocDetails,
+                dispatch,
+                selectedPolicyId
+            );
+
+            onSave({
+                id: editDoc?.id,
+                name: docType,
+                status: required ? "Required" : "Optional",
+                description,
+                fields,
+            });
+
+            onClose();
+        } catch (error) {
+            console.error("Save Error:", error);
+            addToast("error", "Failed", "Unable to save document.");
+        } finally {
+            setLoading(false); // ✅ always stop loading
+        }
     };
 
     return (
@@ -336,13 +358,32 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
                                     </div>
                                     <div className="max-h-44 overflow-y-auto">
                                         {filteredDocs.map((d) => (
-                                            <button key={d} onMouseDown={() => { setDocType(d); setDropOpen(false); setDocSearch(""); }}
-                                                className={`w-full text-left px-3 py-2 text-[13px] hover:bg-indigo-50 hover:text-indigo-600 transition-colors flex items-center justify-between ${docType === d ? "text-indigo-600 font-semibold bg-indigo-50" : "text-gray-700"}`}>
-                                                <span>{d}</span>
-                                                {docType === d && <Check size={12} className="text-indigo-500" />}
+                                            <button
+                                                key={d.name}
+                                                onMouseDown={() => {
+                                                    setDocType(d.display_name);
+                                                    setDropOpen(false);
+                                                    getPolicyExtractedFields(d.name, dispatch, setPolicyExtractedFields)
+                                                    setDocSearch("");
+                                                }}
+                                                className={`w-full text-left px-3 py-2 text-[13px] hover:bg-indigo-50 hover:text-indigo-600 transition-colors flex items-center justify-between ${docType === d.display_name
+                                                    ? "text-indigo-600 font-semibold bg-indigo-50"
+                                                    : "text-gray-700"
+                                                    }`}
+                                            >
+                                                <span>{d.display_name}</span>
+
+                                                {docType === d.display_name && (
+                                                    <Check size={12} className="text-indigo-500" />
+                                                )}
                                             </button>
                                         ))}
-                                        {filteredDocs.length === 0 && <p className="px-3 py-3 text-[12px] text-gray-400 text-center">No results found for "{docSearch}"</p>}
+
+                                        {filteredDocs.length === 0 && (
+                                            <p className="px-3 py-3 text-[12px] text-gray-400 text-center">
+                                                No results found for "{docSearch}"
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -373,9 +414,13 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
                 </div>
                 <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-white">
                     <button onClick={onClose} className="text-[13px] font-semibold text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 px-5 py-2 rounded-lg transition-all">Cancel</button>
-                    <button onClick={handleSave} disabled={!canSave}
-                        className={`flex items-center gap-2 text-[13px] font-semibold px-5 py-2 rounded-lg transition-all ${canSave ? "text-white bg-[#6B55E8] hover:bg-[#5a45d4]" : "text-white bg-gray-300 cursor-not-allowed opacity-60"}`}>
-                        <Check size={13} /> {isEdit ? "Update Document" : "Save Document"}
+                    <button onClick={handleSave} disabled={!canSave || loading}
+                        className={`flex items-center gap-2 text-[13px] font-semibold px-5 py-2 rounded-lg transition-all ${canSave && !loading
+                            ? "text-white bg-[#6B55E8] hover:bg-[#5a45d4]"
+                            : "text-white bg-gray-300 cursor-not-allowed opacity-60"
+                            }`}
+                    >
+                        <Check size={13} /> {loading ? "Saving..." : isEdit ? "Update Document" : "Save Document"}
                     </button>
                 </div>
             </div>
@@ -385,40 +430,58 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
 
 // ── Main component ────────────────────────────────────────────────────────────
 const DocConfigTable = () => {
-    const [docs, setDocs] = useState(INITIAL_DOCS);
+    const { validatorDocDetails, selectedPolicyId, documentTypes } = useSelector((state) => state.validatorSetup)
+    const dispatch = useDispatch();
+    const [localDocs, setLocalDocs] = useState(null);
+    const docs = localDocs || validatorDocDetails?.documents || [];
     const [panelOpen, setPanelOpen] = useState(false);
     const [editDoc, setEditDoc] = useState(null);
     const [confirmDoc, setConfirmDoc] = useState(null);
     const [toasts, setToasts] = useState([]);
-
     const addToast = (type, title, subtitle) => {
         const id = Date.now();
         setToasts((p) => [...p, { id, type, title, subtitle }]);
         setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), 3500);
     };
     const removeToast = (id) => setToasts((p) => p.filter((t) => t.id !== id));
-    const openAdd = () => { setEditDoc(null); setPanelOpen(true); };
-    const openEdit = (doc) => { setEditDoc(doc); setPanelOpen(true); };
+    const openAdd = () => { setEditDoc(null); setPanelOpen(true); dispatch(setPolicyExtractedFields([])); };
+    const openEdit = (doc) => {
+        setEditDoc(doc); setPanelOpen(true);
+        const formatted = doc.display_name
+            .toLowerCase()
+            .replace(/\s+/g, "_");
+        getPolicyExtractedFields(formatted, dispatch, setPolicyExtractedFields)
+    };
     const closePanel = () => { setPanelOpen(false); setEditDoc(null); };
 
     const handleSaveDoc = ({ id, name, status, description, fields }) => {
+        const current = localDocs || validatorDocDetails?.documents || [];
         if (id) {
-            setDocs((p) => p.map((d) => d.id === id ? { ...d, name, status, description, fields } : d));
+            setLocalDocs(current.map((d) => d.id === id ? { ...d, display_name: name, required: status === "Required", description, extract_fields: fields } : d));
             addToast("success", "Document Updated", `${name} updated successfully.`);
         } else {
-            const nextId = docs.length > 0 ? Math.max(...docs.map((d) => d.id)) + 1 : 1;
-            setDocs((p) => [...p, { id: nextId, name, status, description, fields }]);
+            const nextId = `local-${Date.now()}`;
+            setLocalDocs([...current, {
+                id: nextId,
+                display_name: name,           // ← correct field name
+                required: status === "Required", // ← correct field name
+                description,
+                extract_fields: fields,        // ← correct field name
+                extract_fields_count: fields.length,
+            }]);
             addToast("success", "Document Added", `${name} added.`);
         }
     };
 
-    const handleDeleteClick = (e, doc) => { e.stopPropagation(); setConfirmDoc(doc); };
-    const handleDeleteConfirm = () => {
-        setDocs((p) => p.filter((d) => d.id !== confirmDoc.id));
-        addToast("error", "Document Removed", `${confirmDoc.name} has been removed.`);
+    const handleDeleteConfirm = async () => {
+        await deleteValidatorDocDetails(confirmDoc.id);  // ← await first
+        await getValidatorDocDetails(setValidatorDocDetails, dispatch, selectedPolicyId); // ← then refresh
+        setLocalDocs(null); // ← reset local so Redux data shows fresh
+        addToast("error", "Document Removed", `${confirmDoc.display_name} has been removed.`);
         setConfirmDoc(null);
     };
 
+    const handleDeleteClick = (e, doc) => { e.stopPropagation(); setConfirmDoc(doc); };
     const required = docs.filter((d) => d.status === "Required").length;
     const optional = docs.filter((d) => d.status === "Optional").length;
 
@@ -429,7 +492,10 @@ const DocConfigTable = () => {
                 className="p-1.5 rounded-md border border-gray-200 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 hover:border-indigo-400 transition-colors" title="Edit">
                 <Pencil size={12} />
             </button>
-            <button onClick={(e) => handleDeleteClick(e, doc)}
+            <button onClick={(e) => {
+                handleDeleteClick(e, doc)
+
+            }}
                 className="p-1.5 rounded-md border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-400 hover:bg-red-50 transition-colors" title="Remove">
                 <Trash2 size={12} />
             </button>
@@ -449,9 +515,9 @@ const DocConfigTable = () => {
                     <p className="text-xs text-gray-500 font-medium mt-0.5">Click the edit icon to view or edit details and extraction fields</p>
                 </div>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="bg-gray-100 text-gray-500 border border-gray-200 text-[11px] font-semibold px-3 py-0.5 rounded-full">{docs.length} Total</span>
-                    <span className="bg-green-50 text-green-600 border border-green-200 text-[11px] font-semibold px-3 py-0.5 rounded-full">{required} Required</span>
-                    <span className="bg-gray-100 text-gray-500 border border-gray-200 text-[11px] font-semibold px-3 py-0.5 rounded-full">{optional} Optional</span>
+                    <span className="bg-gray-100 text-gray-500 border border-gray-200 text-[11px] font-semibold px-3 py-0.5 rounded-full">{validatorDocDetails?.validator?.documents_count?.total || 0} Total</span>
+                    <span className="bg-green-50 text-green-600 border border-green-200 text-[11px] font-semibold px-3 py-0.5 rounded-full">{validatorDocDetails?.validator?.documents_count?.required || 0} Required</span>
+                    <span className="bg-gray-100 text-gray-500 border border-gray-200 text-[11px] font-semibold px-3 py-0.5 rounded-full">{validatorDocDetails?.validator?.documents_count?.optional || 0} Optional</span>
                     <button onClick={openAdd} className="flex items-center gap-1 text-[12px] font-semibold text-white bg-[#6B55E8] hover:bg-[#5a45d4] px-3 py-1.5 rounded-md transition-all">
                         + Add Document
                     </button>
@@ -466,55 +532,67 @@ const DocConfigTable = () => {
                     ))}
                 </div>
                 <div className="divide-y divide-gray-100">
-                    {docs.map((doc) => {
-                        const visibleFields = doc.fields.slice(0, MAX_VISIBLE_FIELDS);
-                        const hiddenFields = doc.fields.slice(MAX_VISIBLE_FIELDS);
+                    {docs.map((doc, index) => {
+                        const visibleFields = (doc?.extract_fields || []).slice(0, MAX_VISIBLE_FIELDS);
+                        const hiddenFields = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
                         return (
-                            <div key={doc.id} className="grid grid-cols-[50px_220px_120px_1fr_80px_100px] gap-4 px-5 py-2.5 hover:bg-gray-50 transition-colors items-center">
-                                <div className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-semibold flex-shrink-0">{doc.id}</div>
-                                <span className="text-[12px] font-bold text-gray-800 truncate">{doc.name}</span>
+                            <div key={index} className="grid grid-cols-[50px_220px_120px_1fr_80px_100px] gap-4 px-5 py-2.5 hover:bg-gray-50 transition-colors items-center">
+                                <div className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-semibold flex-shrink-0">{index + 1}</div>
+                                <span className="text-[12px] font-bold text-gray-800 truncate">{doc.display_name}</span>
                                 <div>
-                                    <span className={`text-[10px] font-semibold px-3 py-1 rounded-full ${doc.status === "Required" ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"}`}>
-                                        {doc.status}
+                                    <span className={`text-[10px] font-semibold px-3 py-1 rounded-full ${doc.required == true ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"}`}>
+                                        {doc.required === true ? "Required" : "Optional"}
                                     </span>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-1.5">
                                     {visibleFields.map((f) => <FieldTag key={f} label={f} />)}
                                     {hiddenFields.length > 0 && <ExtraFieldsBadge fields={hiddenFields} />}
                                 </div>
-                                <span className="text-[13px] font-bold text-indigo-500">{doc.fields.length}</span>
+                                <span className="text-[13px] font-bold text-indigo-500">
+                                    {doc.extract_fields_count ?? (doc?.extract_fields || []).length}
+                                </span>
                                 <ActionButtons doc={doc} />
                             </div>
                         );
+
                     })}
+                    <div className="flex justify-center items-center ">
+                        {docs.length === 0 && (
+                            <tr>
+                                <td colSpan={6} className="px-5 py-10 text-center text-[13px] text-gray-400">
+                                    No Documents yet. Click <strong>+ Add Document</strong> to create one.
+                                </td>
+                            </tr>
+                        )}
+                    </div>
                 </div>
             </div>
 
             {/* ── MOBILE cards ── */}
             <div className="md:hidden flex flex-col gap-2">
-                {docs.map((doc) => {
-                    const visibleFields = doc.fields.slice(0, MAX_VISIBLE_FIELDS);
-                    const hiddenFields = doc.fields.slice(MAX_VISIBLE_FIELDS);
+                {docs.map((doc, index) => {
+                    const visibleFields = (doc?.extract_fields || []).slice(0, MAX_VISIBLE_FIELDS);
+                    const hiddenFields = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
                     return (
-                        <div key={doc.id} className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex flex-col gap-3">
+                        <div key={index} className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex flex-col gap-3">
                             {/* Top: number + name + actions */}
                             <div className="flex items-start justify-between gap-2">
                                 <div className="flex items-center gap-2 min-w-0">
                                     <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-semibold flex-shrink-0">
-                                        {doc.id}
+                                        {index + 1}
                                     </span>
-                                    <span className="text-[13px] font-bold text-gray-800 leading-snug truncate">{doc.name}</span>
+                                    <span className="text-[13px] font-bold text-gray-800 leading-snug truncate">{doc.display_name}</span>
                                 </div>
                                 <ActionButtons doc={doc} />
                             </div>
 
                             {/* Status + field count */}
                             <div className="flex items-center gap-2">
-                                <span className={`text-[10px] font-semibold px-3 py-1 rounded-full ${doc.status === "Required" ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"}`}>
-                                    {doc.status}
+                                <span className={`text-[10px] font-semibold px-3 py-1 rounded-full ${doc.required == true ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"}`}>
+                                    {doc.required === true ? "Required" : "Optional"}
                                 </span>
                                 <span className="text-[11px] font-semibold text-indigo-500 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full">
-                                    {doc.fields.length} fields
+                                    {doc.extract_fields_count ?? (doc?.extract_fields || []).length} fields
                                 </span>
                             </div>
 
@@ -529,15 +607,24 @@ const DocConfigTable = () => {
                         </div>
                     );
                 })}
+                <div className="flex justify-center items-center ">
+                    {docs.length === 0 && (
+                        <tr>
+                            <td colSpan={6} className="px-5 py-10 text-center text-[13px] text-gray-400">
+                                No Documents yet. Click <strong>+ Add Document</strong> to create one.
+                            </td>
+                        </tr>
+                    )}
+                </div>
             </div>
 
-            {/* Footer */}
+            {/* Footer
             <div className="flex flex-wrap sm:justify-end justify-start gap-3 pt-2">
                 <button className="text-[13px] font-semibold text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 px-5 py-2 rounded-lg transition-all">Discard Changes</button>
                 <button className="flex items-center gap-2 text-[13px] font-semibold text-white bg-[#6B55E8] hover:bg-[#5a45d4] px-5 py-2 rounded-lg transition-all">
                     <Check size={13} /> Save Configuration
                 </button>
-            </div>
+            </div> */}
 
             <style>{`
                 @keyframes slideIn { from { opacity:0; transform:translateX(60px); } to { opacity:1; transform:translateX(0); } }

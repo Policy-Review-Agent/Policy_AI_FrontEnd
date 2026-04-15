@@ -5,7 +5,7 @@ import FileEidt from "../../../../public/assets/images/FileEdit.png"
 import { motion } from "framer-motion";
 import DocConfigTable from "./DocConfigTable";
 import CrossValidationRuleTable from "./CrossValidationRuleTable"
-import { insureType } from "./ValidatorSetup";
+import { setPolicyExtractedFields } from "../../../store/slices/validatorSetupSlice";
 import {
     Shield,
     File,
@@ -13,17 +13,18 @@ import {
     ArrowRightSquare,
     ArrowRight, ShieldCheck
 } from "lucide-react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 const AutoInsurance = () => {
+    const dispatch = useDispatch();
     const [activeTab, setActiveTab] = useState("documents");
     const tabBarRef = useRef(null);
     const activeTabRef = useRef(null);
     const { insureTypeIndex } = useSelector((state) => state.batch);
+    const { validatorlist, validatorDocDetails } = useSelector((state) => state.validatorSetup)
     const tabs = [
         { key: "documents", label: "Document Configuration", Icon: FileText },
         { key: "validation", label: "Cross Validation Rules", Icon: ShieldCheck },
     ];
-
     useEffect(() => {
         if (activeTabRef.current && tabBarRef.current) {
             activeTabRef.current.scrollIntoView({
@@ -34,11 +35,19 @@ const AutoInsurance = () => {
         }
     }, [activeTab]);
 
-    const selectedData = insureType.find((item) => item.id === insureTypeIndex) || insureType[0];
+    const BG_PRESETS = [
+        "bg-gradient-to-br from-[#8B7FF5] to-[#6B55E8]",
+        "bg-gradient-to-br from-[#5BC8F5] to-[#0DA89B]",
+        "bg-gradient-to-br from-[#F97A2A] to-[#E8450A]",
+        "bg-gradient-to-br from-[#F472B6] to-[#EC4899]",
+        "bg-gradient-to-br from-[#34D399] to-[#059669]",
+        "bg-gradient-to-br from-[#60A5FA] to-[#2563EB]",
+    ];
+    const selectedData = validatorlist?.[insureTypeIndex] || validatorlist?.[0];
     return (
         <>
             <div className="min-w-0 w-full">
-                <ValidatorBreadcrumb crumbs={[{ label: "ValidatorSetup", screen: "validatorsetup", }, { label: selectedData.title }]} />
+                <ValidatorBreadcrumb crumbs={[{ label: "ValidatorSetup", screen: "validatorsetup", }, { label: selectedData.name }]} />
                 <div className="md:grid grid-cols bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden min-h-auto p-4 mt-3">
                     <div className="flex flex-wrap gap-2 justify-between items-center">
 
@@ -46,28 +55,17 @@ const AutoInsurance = () => {
 
                             {/* Icon */}
                             {/* Icon — use Shield always, bg from selectedData.bg or bgIdx fallback */}
-                            <div
-                                className={`w-fit p-2.5 rounded-xl shadow-sm ${selectedData.bg ||
-                                    [
-                                        "bg-gradient-to-br from-[#8B7FF5] to-[#6B55E8]",
-                                        "bg-gradient-to-br from-[#5BC8F5] to-[#0DA89B]",
-                                        "bg-gradient-to-br from-[#F97A2A] to-[#E8450A]",
-                                        "bg-gradient-to-br from-[#F472B6] to-[#EC4899]",
-                                        "bg-gradient-to-br from-[#34D399] to-[#059669]",
-                                        "bg-gradient-to-br from-[#60A5FA] to-[#2563EB]",
-                                    ][(selectedData.bgIdx ?? 0) % 6]
-                                    }`}
-                            >
+                            <div className={`w-fit p-2.5 rounded-xl shadow-sm ${BG_PRESETS[insureTypeIndex % BG_PRESETS.length]}`}>
                                 <Shield size={15} className="text-white" />
                             </div>
 
                             {/* Title + Description */}
                             <div>
                                 <h1 className="text-[15px] font-bold">
-                                    {selectedData.title}
+                                    {selectedData.name}
                                 </h1>
                                 <p className="text-xs text-gray-500 font-medium">
-                                    {selectedData.dis}
+                                    {selectedData.description}
                                 </p>
                             </div>
                         </div>
@@ -75,16 +73,14 @@ const AutoInsurance = () => {
                         {/* Right side badges */}
                         <div className="flex flex-row justify-center items-center gap-1">
 
-                            <span className={`${selectedData.statusColor} text-[11px] font-semibold px-3 py-0.5 rounded-full border`}>
-                                {selectedData.status}
+                            <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${selectedData.is_active
+                                ? "bg-green-50 text-green-600 border-green-200"   // ← derived from is_active
+                                : "bg-gray-100 text-gray-500 border-gray-200"
+                                }`}>
+                                {selectedData.is_active ? "Active" : "Inactive"}
                             </span>
-
-                            <span className={`${selectedData.typeColor} text-[11px] font-semibold px-3 py-0.5 rounded-full border`}>
-                                {selectedData.type}
-                            </span>
-
                             <span className="bg-gray-100 text-gray-500 border-gray-200 text-[11px] font-semibold px-3 py-0.5 rounded-full border">
-                                la_familia_azle
+                                {selectedData.provider || "N/A"}
                             </span>
 
                         </div>
@@ -100,7 +96,10 @@ const AutoInsurance = () => {
                             <button
                                 key={t.key}
                                 ref={activeTab === t.key ? activeTabRef : null}
-                                onClick={() => setActiveTab(t.key)}
+                                onClick={() => {
+                                    setActiveTab(t.key);
+                                }
+                                }
                                 className={`relative flex items-center gap-1.5 px-4 py-3 text-[13px] font-semibold whitespace-nowrap flex-shrink-0 transition-colors duration-200 ${activeTab === t.key
                                     ? "text-[#6B55E8]"
                                     : "text-gray-400 hover:text-gray-600"
@@ -132,7 +131,7 @@ const AutoInsurance = () => {
                         </div>
                     )}
                 </div>
-            </div>
+            </div >
         </>
     )
 }
