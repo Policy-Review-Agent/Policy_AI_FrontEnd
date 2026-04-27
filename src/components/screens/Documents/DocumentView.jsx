@@ -264,7 +264,7 @@ const DocumentView = ({ doc, documentData, isApiDataObject, pdfUrl, setMobileDet
                     </div>
                     <div className="flex flex-row">
                         {doc && tabs.map((t) => (
-                            <button key={t.key} onClick={() => setActiveTab(t.key)} className={`flex-shrink-0 relative flex items-center px-3 sm:px-4 text-[13px] font-semibold transition-colors whitespace-nowrap border-b-2 ${activeTab === t.key ? "text-primary border-primary" : "text-gray-400 hover:text-gray-600 border-transparent"}`}>
+                            <button key={t.key} onClick={() => setActiveTab(t.key)} className={`flex-shrink-0 relative flex items-center px-3 sm:px-4 text-[13px] font-semibold transition-colors whitespace-nowrap border-b-2 ${activeTab === t.key ? "text-indigo-600 border-indigo-600" : "text-gray-400 hover:text-gray-600 border-transparent"}`}>
                                 {t.label}
                             </button>
                         ))}

@@ -1,33 +1,90 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { navigate } from "../../../store/slices/navigationSlice";
 import { selectCurrentPolicy, selectCurrentBatch, setChecklistSummary, setPolicyList, setPolicyCheckList, setDocumentData } from "../../../store/slices/batchSlice";
 import { setSelectedDocViewerIdx } from "../../../store/slices/validationSlice";
 import { getChecklistSummary, getPolicyList, getPolicyCheckList, getDocumentData } from "../../api/apisCall";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Breadcrumb from "../../layout/Breadcrumb";
 import ChecklistRow from "./ChecklistRow";
 
 const TABLE_HEADS = ["#", "Document Name", "Detected", "Confidence", "Validation Rules", "Document"];
 
+// Desktop skeleton rows
+const SkeletonTableRows = ({ rows = 5, cols = 6 }) => (
+  <React.Fragment>
+    {Array.from({ length: rows }).map((_, i) => (
+      <tr key={`skel-row-${i}`} className="border-b border-gray-100">
+        {Array.from({ length: cols }).map((_, j) => (
+          <td key={`skel-col-${j}`} className="px-4 py-3">
+            <div
+              className="h-3 bg-gray-100 rounded-full animate-pulse"
+              style={{ width: `${45 + (j * 11) % 45}%` }}
+            />
+          </td>
+        ))}
+      </tr>
+    ))}
+  </React.Fragment>
+);
+
+// Mobile skeleton cards
+const SkeletonMobileCards = ({ count = 5 }) => (
+  <React.Fragment>
+    {Array.from({ length: count }).map((_, i) => (
+      <tr key={`skel-card-${i}`} className="md:hidden">
+        <td colSpan={6} className="px-3 py-2 pb-1">
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div className="px-4 py-3 flex flex-col gap-3">
+              <div className="flex justify-between items-center">
+                <div className="h-3 w-36 bg-gray-100 rounded-full animate-pulse" />
+                <div className="h-5 w-14 bg-gray-100 rounded-full animate-pulse" />
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="flex gap-1">
+                  {Array.from({ length: 4 }).map((_, k) => (
+                    <div key={k} className="w-5 h-5 bg-gray-100 rounded animate-pulse" />
+                  ))}
+                </div>
+                <div className="h-3 w-10 bg-gray-100 rounded-full animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+    ))}
+  </React.Fragment>
+);
+
+// Skeleton stat cards (mobile top summary)
+const SkeletonStatCards = () => (
+  <React.Fragment>
+    {Array.from({ length: 3 }).map((_, i) => (
+      <div key={i} className="card px-2 py-2 rounded border w-full bg-gray-50 border-gray-100">
+        <div className="flex flex-col justify-center items-center gap-2 py-1">
+          <div className="h-6 w-8 bg-gray-200 rounded-full animate-pulse" />
+          <div className="h-3 w-14 bg-gray-100 rounded-full animate-pulse" />
+        </div>
+      </div>
+    ))}
+  </React.Fragment>
+);
+
 const PolicyChecklist = () => {
   const dispatch = useDispatch();
   const policy = useSelector(selectCurrentPolicy);
   const batch = useSelector(selectCurrentBatch);
-  const { checklistSummary, policyCheckList, documentData } = useSelector((state) => state.batch);
+  const { checklistSummary, policyCheckList } = useSelector((state) => state.batch);
+
+  const [loading, setLoading] = useState(true);
 
   const present = (policyCheckList || []).filter((d) => (d.detected_status === "found" || d.st === "YES")).length;
   const missing = (policyCheckList || []).filter((d) => (d.detected_status === "missing" || d.st === "NO")).length;
   const partial = (policyCheckList || []).filter((d) => (d.detected_status === "partial" || d.st === "PARTIAL")).length;
+
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         if (batch?.batch_id && !policy) {
           await getPolicyList(setPolicyList, batch.batch_id, dispatch);
@@ -39,25 +96,19 @@ const PolicyChecklist = () => {
         }
       } catch (error) {
         console.error("Error in API calls:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
   }, [batch?.batch_id, policy, dispatch]);
+
   const dashaboardCard = [
-    {
-      discription: 'Detected',
-      count: present
-    },
-    {
-      discription: 'Missing',
-      count: missing
-    },
-    {
-      discription: 'Partial',
-      count: partial
-    }
-  ]
+    { discription: "Detected", count: present },
+    { discription: "Missing", count: missing },
+    { discription: "Partial", count: partial },
+  ];
 
   const handleViewDoc = (idx) => {
     const doc = policyCheckList[idx];
@@ -68,7 +119,6 @@ const PolicyChecklist = () => {
     dispatch(navigate("documents"));
   };
 
-  // if (!policy) return <p className="text-sm text-gray-400">No policy selected.</p>;
   return (
     <div>
       <Breadcrumb
@@ -96,43 +146,48 @@ const PolicyChecklist = () => {
           >
             <ArrowLeft size={12} /> Back
           </button>
-          {/* <button
-            onClick={() => dispatch(navigate("validation"))}
-            className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 bg-primary hover:bg-primary-dark px-3 py-2 rounded-md transition"
-          >
-            Proceed to Validation <ArrowRight size={12} />
-          </button> */}
         </div>
       </div>
 
-      {/* Warning banner */}
-      {/* {missing > 0 && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5">
-          <AlertTriangle size={15} className="text-amber-500 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-amber-700">
-            <strong>{missing} document{missing !== 1 ? "s" : ""} missing.</strong>{" "}
-            Review before proceeding to validation.
-          </p>
-        </div>
-      )} */}
+      {/* Mobile stat cards */}
+      <div className="text-gray-800 flex justify-between items-center gap-3 mb-2 md:hidden">
+        {loading ? (
+          <SkeletonStatCards />
+        ) : (
+          dashaboardCard.map((item, index) => (
+            <div
+              key={index}
+              className={`card px-2 py-2 rounded border w-full ${
+                item.discription === "Detected" ? "bg-[#F0FDF4] border-[#BBF7D0]"
+                : item.discription === "Missing" ? "bg-[#FEF2F2] border-[#FECACA]"
+                : item.discription === "Partial" ? "bg-[#FFFBEB] border-[#FDE68A]"
+                : "bg-white"
+              }`}
+            >
+              <div className="card-body flex flex-col justify-center items-center">
+                <p className={`text-[20px] font-bold ${
+                  item.discription === "Detected" ? "text-[#16A34A]"
+                  : item.discription === "Missing" ? "text-[#DC2626]"
+                  : item.discription === "Partial" ? "text-[#D97706]"
+                  : "text-gray-500"
+                }`}>
+                  {item.count}
+                </p>
+                <span className={`${
+                  item.discription === "Detected" ? "text-[#16A34A]"
+                  : item.discription === "Missing" ? "text-[#DC2626]"
+                  : item.discription === "Partial" ? "text-[#D97706]"
+                  : "text-gray-500"
+                }`}>
+                  {item.discription}
+                </span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
 
       {/* Table card */}
-
-      <div className="text-gray-800 flex justify-between items-center gap-3 mb-2 md:hidden">
-        {dashaboardCard.map((item, index) => (
-          <div className={`card px-2 py-2 rounded border w-full ${item.discription === "Detected" ? "bg-[#F0FDF4] border-[#BBF7D0]" : item.discription === "Missing" ? "bg-[#FEF2F2] border-[#FECACA]" : item.discription === "Partial" ? "bg-[#FFFBEB] border-[#FDE68A]" : "bg-white"
-            }`} key={index}>
-            <div className="card-body flex flex-col justify-center items-center">
-              <p className={`text-[20px] font-bold ${item.discription === "Detected" ? "text-[#16A34A] " : item.discription === "Missing" ? "text-[#DC2626]" : item.discription === "Partial" ? "text-[#D97706]" : "text-gray-500"}`}>
-                {item.count}
-              </p>
-              <span className={`${item.discription === "Detected" ? "text-[#16A34A] " : item.discription === "Missing" ? "text-[#DC2626]" : item.discription === "Partial" ? "text-[#D97706]" : "text-gray-500"}`}>
-                {item.discription}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
 
         {/* Title row */}
@@ -148,7 +203,6 @@ const PolicyChecklist = () => {
           </div>
         </div>
 
-        {/* Desktop: show thead; Mobile: hide it (cards are self-labelled) */}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="hidden md:table-header-group">
@@ -164,20 +218,33 @@ const PolicyChecklist = () => {
               </tr>
             </thead>
 
-            {/* On mobile tbody has p-3 gap so cards breathe inside the outer card */}
             <tbody className="md:table-row-group p-1 md:p-0 space-y-2 md:space-y-0">
-              {policyCheckList?.map((doc, index) => (
-                <ChecklistRow
-                  key={doc.id}
-                  doc={doc}
-                  index={index}
-                  onViewDoc={() => handleViewDoc(index)}
-                />
-              ))}
+              {loading ? (
+                <>
+                  {/* Desktop skeleton */}
+                  <SkeletonTableRows rows={5} cols={TABLE_HEADS.length} />
+                  {/* Mobile skeleton */}
+                  <SkeletonMobileCards count={5} />
+                </>
+              ) : policyCheckList?.length > 0 ? (
+                policyCheckList.map((doc, index) => (
+                  <ChecklistRow
+                    key={doc.id}
+                    doc={doc}
+                    index={index}
+                    onViewDoc={() => handleViewDoc(index)}
+                  />
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={TABLE_HEADS.length} className="text-center py-8 text-sm text-gray-400">
+                    No documents found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
-
       </div>
     </div>
   );

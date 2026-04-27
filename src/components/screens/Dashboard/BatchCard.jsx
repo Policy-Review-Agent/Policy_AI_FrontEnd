@@ -14,7 +14,6 @@ const STATUS_MAP = {
 
 const BatchCard = ({ batch }) => {
   const dispatch = useDispatch();
-  const pending = batch.pending;
 
   const handleOpen = () => {
     getPolicySummary(setPolicySummary, batch.batch_id, dispatch);
@@ -80,9 +79,6 @@ const BatchCard = ({ batch }) => {
                 <span>Pending <strong className="text-amber-500">{batch.pending}</strong></span>
               </div>
             </div>
-
-            {/* Right arrow */}
-
           </div>
         </td>
       </tr>

@@ -6,6 +6,69 @@ import { createValidatorDocDetails, getValidatorDocDetails, deleteValidatorDocDe
 
 const MAX_VISIBLE_FIELDS = 2;
 
+// ── Skeleton rows (desktop) ───────────────────────────────────────────────────
+const SkeletonDesktopRows = ({ rows = 5 }) => (
+    <React.Fragment>
+        {Array.from({ length: rows }).map((_, i) => (
+            <div key={`skel-d-${i}`} className="grid grid-cols-[50px_220px_120px_1fr_80px_100px] gap-4 px-5 py-3 border-b border-gray-100 last:border-0 items-center">
+                <div className="w-5 h-5 rounded-full bg-gray-100 animate-pulse" />
+                <div className="h-3 w-36 bg-gray-100 rounded-full animate-pulse" />
+                <div className="h-5 w-20 bg-gray-100 rounded-full animate-pulse" />
+                <div className="flex gap-1.5">
+                    <div className="h-5 w-20 bg-gray-100 rounded-md animate-pulse" />
+                    <div className="h-5 w-16 bg-gray-100 rounded-md animate-pulse" />
+                </div>
+                <div className="h-3 w-6 bg-gray-100 rounded-full animate-pulse" />
+                <div className="flex gap-2">
+                    <div className="w-7 h-7 bg-gray-100 rounded-md animate-pulse" />
+                    <div className="w-7 h-7 bg-gray-100 rounded-md animate-pulse" />
+                </div>
+            </div>
+        ))}
+    </React.Fragment>
+);
+
+// ── Skeleton cards (mobile) ───────────────────────────────────────────────────
+const SkeletonMobileCards = ({ count = 4 }) => (
+    <React.Fragment>
+        {Array.from({ length: count }).map((_, i) => (
+            <div key={`skel-m-${i}`} className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full bg-gray-100 animate-pulse flex-shrink-0" />
+                        <div className="h-3.5 w-36 bg-gray-100 rounded-full animate-pulse" />
+                    </div>
+                    <div className="flex gap-2">
+                        <div className="w-7 h-7 bg-gray-100 rounded-md animate-pulse" />
+                        <div className="w-7 h-7 bg-gray-100 rounded-md animate-pulse" />
+                    </div>
+                </div>
+                <div className="flex gap-2">
+                    <div className="h-5 w-16 bg-gray-100 rounded-full animate-pulse" />
+                    <div className="h-5 w-16 bg-gray-100 rounded-full animate-pulse" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                    <div className="h-2.5 w-24 bg-gray-100 rounded-full animate-pulse" />
+                    <div className="flex gap-1.5">
+                        <div className="h-5 w-20 bg-gray-100 rounded-md animate-pulse" />
+                        <div className="h-5 w-16 bg-gray-100 rounded-md animate-pulse" />
+                    </div>
+                </div>
+            </div>
+        ))}
+    </React.Fragment>
+);
+
+// ── Skeleton header badges ────────────────────────────────────────────────────
+const SkeletonHeaderBadges = () => (
+    <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="h-5 w-16 bg-gray-100 rounded-full animate-pulse" />
+        <div className="h-5 w-20 bg-gray-100 rounded-full animate-pulse" />
+        <div className="h-5 w-20 bg-gray-100 rounded-full animate-pulse" />
+        <div className="h-7 w-28 bg-gray-100 rounded-md animate-pulse" />
+    </div>
+);
+
 // ── Toast ─────────────────────────────────────────────────────────────────────
 const Toast = ({ toasts, onClose }) => (
     <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none">
@@ -51,7 +114,6 @@ const ConfirmDialog = ({ doc, onConfirm, onCancel }) => (
     </div>
 );
 
-// ── Toggle ────────────────────────────────────────────────────────────────────
 const Toggle = ({ checked, onChange }) => (
     <button onClick={onChange}
         className={`relative inline-flex items-center w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0 ${checked ? "bg-[#6B55E8]" : "bg-gray-300"}`}>
@@ -59,14 +121,12 @@ const Toggle = ({ checked, onChange }) => (
     </button>
 );
 
-// ── Field tag ─────────────────────────────────────────────────────────────────
 const FieldTag = ({ label }) => (
     <span className="text-[11px] font-medium text-indigo-500 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md font-mono whitespace-nowrap">
         {label}
     </span>
 );
 
-// ── Extra fields popup ────────────────────────────────────────────────────────
 const ExtraFieldsBadge = ({ fields }) => {
     const [open, setOpen] = useState(false);
     const [popupStyle, setPopupStyle] = useState({});
@@ -82,50 +142,24 @@ const ExtraFieldsBadge = ({ fields }) => {
         if (!open && ref.current) {
             const rect = ref.current.getBoundingClientRect();
             const popupW = 220;
-            const popupH = 200; // approx
+            const popupH = 200;
             const spaceRight = window.innerWidth - rect.left;
             const spaceBelow = window.innerHeight - rect.bottom;
-
             const style = {};
-
-            // Horizontal: flip to right-aligned if not enough space on the right
-            if (spaceRight < popupW) {
-                style.right = 0;
-                style.left = "auto";
-            } else {
-                style.left = 0;
-                style.right = "auto";
-            }
-
-            // Vertical: flip upward if not enough space below
-            if (spaceBelow < popupH) {
-                style.bottom = "100%";
-                style.top = "auto";
-                style.marginBottom = "4px";
-            } else {
-                style.top = "100%";
-                style.bottom = "auto";
-                style.marginTop = "4px";
-            }
-
+            if (spaceRight < popupW) { style.right = 0; style.left = "auto"; } else { style.left = 0; style.right = "auto"; }
+            if (spaceBelow < popupH) { style.bottom = "100%"; style.top = "auto"; style.marginBottom = "4px"; } else { style.top = "100%"; style.bottom = "auto"; style.marginTop = "4px"; }
             setPopupStyle(style);
         }
         setOpen((o) => !o);
     };
     return (
         <div className="relative" ref={ref}>
-            <button onClick={handleToggle}
-                className="text-[11px] font-semibold text-gray-400 hover:text-[#6B55E8] transition-colors">
+            <button onClick={handleToggle} className="text-[11px] font-semibold text-gray-400 hover:text-[#6B55E8] transition-colors">
                 +{fields.length} More
             </button>
             {open && (
-                <div
-                    ref={popRef}
-                    style={popupStyle}
-                    className="absolute z-50 top-8 sm:left-0 left-[-140px] bg-white border border-gray-200 rounded-xl shadow-xl p-3 min-w-[200px] w-max max-w-[260px]">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2.5">
-                        {fields.length} more field{fields.length > 1 ? "s" : ""}
-                    </p>
+                <div ref={popRef} style={popupStyle} className="absolute z-50 top-8 sm:left-0 left-[-140px] bg-white border border-gray-200 rounded-xl shadow-xl p-3 min-w-[200px] w-max max-w-[260px]">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2.5">{fields.length} more field{fields.length > 1 ? "s" : ""}</p>
                     <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
                         {fields.map((f) => <FieldTag key={f} label={f} />)}
                     </div>
@@ -135,9 +169,8 @@ const ExtraFieldsBadge = ({ fields }) => {
     );
 };
 
-// ── Extract Fields Input ──────────────────────────────────────────────────────
 const ExtractFieldsInput = ({ fields, onChange }) => {
-    const { policyExtractedFields } = useSelector((state) => state.validatorSetup)
+    const { policyExtractedFields } = useSelector((state) => state.validatorSetup);
     const [inputVal, setInputVal] = useState("");
     const [showSug, setShowSug] = useState(false);
     const [dropUpward, setDropUpward] = useState(false);
@@ -150,12 +183,10 @@ const ExtractFieldsInput = ({ fields, onChange }) => {
         return () => document.removeEventListener("mousedown", handler);
     }, []);
 
-    // Detect direction before showing dropdown
     const openSuggestions = () => {
         if (wrapRef.current) {
             const rect = wrapRef.current.getBoundingClientRect();
-            const spaceBelow = window.innerHeight - rect.bottom;
-            setDropUpward(spaceBelow < 220); // flip if less than 220px below
+            setDropUpward(window.innerHeight - rect.bottom < 220);
         }
         setShowSug(true);
     };
@@ -180,39 +211,24 @@ const ExtractFieldsInput = ({ fields, onChange }) => {
 
     return (
         <div ref={wrapRef} className="relative">
-            <div
-                className="min-h-[40px] border border-gray-200 rounded-lg p-2.5 flex flex-wrap gap-1.5 cursor-text focus-within:border-[#6B55E8] focus-within:ring-1 focus-within:ring-[#6B55E8]/20 transition-all"
-                onClick={() => { inputRef.current?.focus(); openSuggestions(); }}
-            >
+            <div className="min-h-[40px] border border-gray-200 rounded-lg p-2.5 flex flex-wrap gap-1.5 cursor-text focus-within:border-[#6B55E8] focus-within:ring-1 focus-within:ring-[#6B55E8]/20 transition-all"
+                onClick={() => { inputRef.current?.focus(); openSuggestions(); }}>
                 {fields.map((f) => (
                     <span key={f} className="flex items-center gap-1 text-[11px] font-medium text-indigo-500 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md font-mono">
                         {f}
-                        <button onClick={(e) => { e.stopPropagation(); removeField(f); }} className="hover:text-red-500 transition-colors">
-                            <X size={10} />
-                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); removeField(f); }} className="hover:text-red-500 transition-colors"><X size={10} /></button>
                     </span>
                 ))}
-                <input
-                    ref={inputRef}
-                    value={inputVal}
-                    onChange={(e) => { setInputVal(e.target.value); setShowSug(true); }}
-                    onKeyDown={handleKeyDown}
-                    onFocus={openSuggestions}
+                <input ref={inputRef} value={inputVal} onChange={(e) => { setInputVal(e.target.value); setShowSug(true); }}
+                    onKeyDown={handleKeyDown} onFocus={openSuggestions}
                     placeholder={fields.length === 0 ? "Type field name and press Enter..." : ""}
-                    className="flex-1 min-w-[160px] text-[12px] text-gray-600 bg-transparent outline-none placeholder-gray-300"
-                />
+                    className="flex-1 min-w-[160px] text-[12px] text-gray-600 bg-transparent outline-none placeholder-gray-300" />
             </div>
-
             {showSug && (
-                <div className={`absolute z-50 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden ${dropUpward
-                    ? "bottom-full mb-1"   // opens upward
-                    : "top-full mt-1"      // opens downward (default)
-                    }`}>
+                <div className={`absolute z-50 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden ${dropUpward ? "bottom-full mb-1" : "top-full mt-1"}`}>
                     <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 bg-gray-50">
                         <Search size={12} className="text-gray-500 flex-shrink-0" />
-                        <span className="text-[11px] text-gray-500">
-                            {inputVal ? `Results for "${inputVal}"` : "Available fields"}
-                        </span>
+                        <span className="text-[11px] text-gray-500">{inputVal ? `Results for "${inputVal}"` : "Available fields"}</span>
                         <span className="ml-auto text-[10px] text-gray-400">{suggestions.length} found</span>
                     </div>
                     {suggestions.length > 0 ? (
@@ -230,15 +246,13 @@ const ExtractFieldsInput = ({ fields, onChange }) => {
                     )}
                 </div>
             )}
-
             <p className="text-[11px] text-gray-400 mt-1.5"><strong>Backspace</strong> to remove last</p>
         </div>
     );
 };
 
-// ── Add / Edit Panel ──────────────────────────────────────────────────────────
 const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
-    const { selectedPolicyId, documentTypes, policyExtractedFields } = useSelector((state) => state.validatorSetup)
+    const { selectedPolicyId, documentTypes, policyExtractedFields } = useSelector((state) => state.validatorSetup);
     const dispatch = useDispatch();
     const isEdit = !!editDoc;
     const [docType, setDocType] = useState("");
@@ -250,23 +264,17 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
     const dropRef = useRef(null);
     const [loading, setLoading] = useState(false);
 
-
     useEffect(() => {
         if (open) {
             if (editDoc) {
-                // ← use API field names: display_name, required, extract_fields
                 setDocType(editDoc.display_name || "");
                 setRequired(editDoc.required === true);
                 setDescription(editDoc.description || "");
                 setFields(editDoc.extract_fields || []);
             } else {
-                setDocType("");
-                setRequired(true);
-                setDescription("");
-                setFields([]);
+                setDocType(""); setRequired(true); setDescription(""); setFields([]);
             }
-            setDropOpen(false);
-            setDocSearch("");
+            setDropOpen(false); setDocSearch("");
         }
     }, [open, editDoc]);
 
@@ -277,52 +285,25 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
     }, []);
 
     const canSave = docType.trim() !== "" && fields.length > 0;
-    const filteredDocs = documentTypes?.filter((d) =>
-        d.display_name.toLowerCase().includes(docSearch.toLowerCase())
-    ) || [];
+    const filteredDocs = documentTypes?.filter((d) => d.display_name.toLowerCase().includes(docSearch.toLowerCase())) || [];
 
     const handleSave = async () => {
         if (!canSave) return;
-
         try {
-            setLoading(true); // ✅ start loading
-
-            const payload = {
-                document_type: docType,
-                display_name: docType,
-                required: required,
-                description,
-                extract_fields: fields,
-            };
-
+            setLoading(true);
+            const payload = { document_type: docType, display_name: docType, required, description, extract_fields: fields };
             if (isEdit && editDoc?.id) {
-                // UPDATE
                 await updateValidatorDocDetails(editDoc.id, payload);
             } else {
-                // CREATE
                 await createValidatorDocDetails(payload, selectedPolicyId);
             }
-
-            await getValidatorDocDetails(
-                setValidatorDocDetails,
-                dispatch,
-                selectedPolicyId
-            );
-
-            onSave({
-                id: editDoc?.id,
-                name: docType,
-                status: required ? "Required" : "Optional",
-                description,
-                fields,
-            });
-
+            await getValidatorDocDetails(setValidatorDocDetails, dispatch, selectedPolicyId);
+            onSave({ id: editDoc?.id, name: docType, status: required ? "Required" : "Optional", description, fields });
             onClose();
         } catch (error) {
             console.error("Save Error:", error);
-            addToast("error", "Failed", "Unable to save document.");
         } finally {
-            setLoading(false); // ✅ always stop loading
+            setLoading(false);
         }
     };
 
@@ -353,37 +334,19 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
                                     <div className="p-2 border-b border-gray-100">
                                         <div className="flex items-center gap-2 border border-gray-200 rounded-md px-2 py-1.5">
                                             <Search size={12} className="text-gray-400 flex-shrink-0" />
-                                            <input autoFocus value={docSearch} onChange={(e) => setDocSearch(e.target.value)} placeholder="Search document type..." className="flex-1 text-[12px] bg-transparent outline-none text-gray-600 placeholder-gray-300" />
+                                            <input autoFocus value={docSearch} onChange={(e) => setDocSearch(e.target.value)} placeholder="Search document type..."
+                                                className="flex-1 text-[12px] bg-transparent outline-none text-gray-600 placeholder-gray-300" />
                                         </div>
                                     </div>
                                     <div className="max-h-44 overflow-y-auto">
                                         {filteredDocs.map((d) => (
-                                            <button
-                                                key={d.name}
-                                                onMouseDown={() => {
-                                                    setDocType(d.display_name);
-                                                    setDropOpen(false);
-                                                    getPolicyExtractedFields(d.name, dispatch, setPolicyExtractedFields)
-                                                    setDocSearch("");
-                                                }}
-                                                className={`w-full text-left px-3 py-2 text-[13px] hover:bg-indigo-50 hover:text-indigo-600 transition-colors flex items-center justify-between ${docType === d.display_name
-                                                    ? "text-indigo-600 font-semibold bg-indigo-50"
-                                                    : "text-gray-700"
-                                                    }`}
-                                            >
+                                            <button key={d.name} onMouseDown={() => { setDocType(d.display_name); setDropOpen(false); getPolicyExtractedFields(d.name, dispatch, setPolicyExtractedFields); setDocSearch(""); }}
+                                                className={`w-full text-left px-3 py-2 text-[13px] hover:bg-indigo-50 hover:text-indigo-600 transition-colors flex items-center justify-between ${docType === d.display_name ? "text-indigo-600 font-semibold bg-indigo-50" : "text-gray-700"}`}>
                                                 <span>{d.display_name}</span>
-
-                                                {docType === d.display_name && (
-                                                    <Check size={12} className="text-indigo-500" />
-                                                )}
+                                                {docType === d.display_name && <Check size={12} className="text-indigo-500" />}
                                             </button>
                                         ))}
-
-                                        {filteredDocs.length === 0 && (
-                                            <p className="px-3 py-3 text-[12px] text-gray-400 text-center">
-                                                No results found for "{docSearch}"
-                                            </p>
-                                        )}
+                                        {filteredDocs.length === 0 && <p className="px-3 py-3 text-[12px] text-gray-400 text-center">No results found for "{docSearch}"</p>}
                                     </div>
                                 </div>
                             )}
@@ -415,11 +378,7 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
                 <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-white">
                     <button onClick={onClose} className="text-[13px] font-semibold text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 px-5 py-2 rounded-lg transition-all">Cancel</button>
                     <button onClick={handleSave} disabled={!canSave || loading}
-                        className={`flex items-center gap-2 text-[13px] font-semibold px-5 py-2 rounded-lg transition-all ${canSave && !loading
-                            ? "text-white bg-[#6B55E8] hover:bg-[#5a45d4]"
-                            : "text-white bg-gray-300 cursor-not-allowed opacity-60"
-                            }`}
-                    >
+                        className={`flex items-center gap-2 text-[13px] font-semibold px-5 py-2 rounded-lg transition-all ${canSave && !loading ? "text-white bg-[#6B55E8] hover:bg-[#5a45d4]" : "text-white bg-gray-300 cursor-not-allowed opacity-60"}`}>
                         <Check size={13} /> {loading ? "Saving..." : isEdit ? "Update Document" : "Save Document"}
                     </button>
                 </div>
@@ -430,27 +389,35 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
 
 // ── Main component ────────────────────────────────────────────────────────────
 const DocConfigTable = () => {
-    const { validatorDocDetails, selectedPolicyId, documentTypes } = useSelector((state) => state.validatorSetup)
+    const { validatorDocDetails, selectedPolicyId, documentTypes } = useSelector((state) => state.validatorSetup);
     const dispatch = useDispatch();
     const [localDocs, setLocalDocs] = useState(null);
     const docs = localDocs || validatorDocDetails?.documents || [];
+    const [loading, setLoading] = useState(true);
     const [panelOpen, setPanelOpen] = useState(false);
     const [editDoc, setEditDoc] = useState(null);
     const [confirmDoc, setConfirmDoc] = useState(null);
     const [toasts, setToasts] = useState([]);
+
+    // Hide loader once documents arrive
+    useEffect(() => {
+        if (validatorDocDetails?.documents !== undefined) {
+            setLoading(false);
+        }
+    }, [validatorDocDetails]);
+
     const addToast = (type, title, subtitle) => {
         const id = Date.now();
         setToasts((p) => [...p, { id, type, title, subtitle }]);
         setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), 3500);
     };
     const removeToast = (id) => setToasts((p) => p.filter((t) => t.id !== id));
+
     const openAdd = () => { setEditDoc(null); setPanelOpen(true); dispatch(setPolicyExtractedFields([])); };
     const openEdit = (doc) => {
         setEditDoc(doc); setPanelOpen(true);
-        const formatted = doc.display_name
-            .toLowerCase()
-            .replace(/\s+/g, "_");
-        getPolicyExtractedFields(formatted, dispatch, setPolicyExtractedFields)
+        const formatted = doc.display_name.toLowerCase().replace(/\s+/g, "_");
+        getPolicyExtractedFields(formatted, dispatch, setPolicyExtractedFields);
     };
     const closePanel = () => { setPanelOpen(false); setEditDoc(null); };
 
@@ -461,41 +428,28 @@ const DocConfigTable = () => {
             addToast("success", "Document Updated", `${name} updated successfully.`);
         } else {
             const nextId = `local-${Date.now()}`;
-            setLocalDocs([...current, {
-                id: nextId,
-                display_name: name,           // ← correct field name
-                required: status === "Required", // ← correct field name
-                description,
-                extract_fields: fields,        // ← correct field name
-                extract_fields_count: fields.length,
-            }]);
+            setLocalDocs([...current, { id: nextId, display_name: name, required: status === "Required", description, extract_fields: fields, extract_fields_count: fields.length }]);
             addToast("success", "Document Added", `${name} added.`);
         }
     };
 
     const handleDeleteConfirm = async () => {
-        await deleteValidatorDocDetails(confirmDoc.id);  // ← await first
-        await getValidatorDocDetails(setValidatorDocDetails, dispatch, selectedPolicyId); // ← then refresh
-        setLocalDocs(null); // ← reset local so Redux data shows fresh
+        await deleteValidatorDocDetails(confirmDoc.id);
+        await getValidatorDocDetails(setValidatorDocDetails, dispatch, selectedPolicyId);
+        setLocalDocs(null);
         addToast("error", "Document Removed", `${confirmDoc.display_name} has been removed.`);
         setConfirmDoc(null);
     };
 
     const handleDeleteClick = (e, doc) => { e.stopPropagation(); setConfirmDoc(doc); };
-    const required = docs.filter((d) => d.status === "Required").length;
-    const optional = docs.filter((d) => d.status === "Optional").length;
 
-    // Shared action buttons
     const ActionButtons = ({ doc }) => (
         <div className="flex items-center gap-2">
             <button onClick={(e) => { e.stopPropagation(); openEdit(doc); }}
                 className="p-1.5 rounded-md border border-gray-200 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 hover:border-indigo-400 transition-colors" title="Edit">
                 <Pencil size={12} />
             </button>
-            <button onClick={(e) => {
-                handleDeleteClick(e, doc)
-
-            }}
+            <button onClick={(e) => { handleDeleteClick(e, doc); }}
                 className="p-1.5 rounded-md border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-400 hover:bg-red-50 transition-colors" title="Remove">
                 <Trash2 size={12} />
             </button>
@@ -514,14 +468,16 @@ const DocConfigTable = () => {
                     <h1 className="text-[16px] font-bold text-gray-800 tracking-tight">Documents Configuration</h1>
                     <p className="text-xs text-gray-500 font-medium mt-0.5">Click the edit icon to view or edit details and extraction fields</p>
                 </div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="bg-gray-100 text-gray-500 border border-gray-200 text-[11px] font-semibold px-3 py-0.5 rounded-full">{validatorDocDetails?.validator?.documents_count?.total || 0} Total</span>
-                    <span className="bg-green-50 text-green-600 border border-green-200 text-[11px] font-semibold px-3 py-0.5 rounded-full">{validatorDocDetails?.validator?.documents_count?.required || 0} Required</span>
-                    <span className="bg-gray-100 text-gray-500 border border-gray-200 text-[11px] font-semibold px-3 py-0.5 rounded-full">{validatorDocDetails?.validator?.documents_count?.optional || 0} Optional</span>
-                    <button onClick={openAdd} className="flex items-center gap-1 text-[12px] font-semibold text-white bg-[#6B55E8] hover:bg-[#5a45d4] px-3 py-1.5 rounded-md transition-all">
-                        + Add Document
-                    </button>
-                </div>
+                {loading ? <SkeletonHeaderBadges /> : (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="bg-gray-100 text-gray-500 border border-gray-200 text-[11px] font-semibold px-3 py-0.5 rounded-full">{validatorDocDetails?.validator?.documents_count?.total || 0} Total</span>
+                        <span className="bg-green-50 text-green-600 border border-green-200 text-[11px] font-semibold px-3 py-0.5 rounded-full">{validatorDocDetails?.validator?.documents_count?.required || 0} Required</span>
+                        <span className="bg-gray-100 text-gray-500 border border-gray-200 text-[11px] font-semibold px-3 py-0.5 rounded-full">{validatorDocDetails?.validator?.documents_count?.optional || 0} Optional</span>
+                        <button onClick={openAdd} className="flex items-center gap-1 text-[12px] font-semibold text-white bg-[#6B55E8] hover:bg-[#5a45d4] px-3 py-1.5 rounded-md transition-all">
+                            + Add Document
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* ── DESKTOP table ── */}
@@ -532,103 +488,81 @@ const DocConfigTable = () => {
                     ))}
                 </div>
                 <div className="divide-y divide-gray-100">
-                    {docs.map((doc, index) => {
-                        const visibleFields = (doc?.extract_fields || []).slice(0, MAX_VISIBLE_FIELDS);
-                        const hiddenFields = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
-                        return (
-                            <div key={index} className="grid grid-cols-[50px_220px_120px_1fr_80px_100px] gap-4 px-5 py-2.5 hover:bg-gray-50 transition-colors items-center">
-                                <div className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-semibold flex-shrink-0">{index + 1}</div>
-                                <span className="text-[12px] font-bold text-gray-800 truncate">{doc.display_name}</span>
-                                <div>
-                                    <span className={`text-[10px] font-semibold px-3 py-1 rounded-full ${doc.required == true ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"}`}>
-                                        {doc.required === true ? "Required" : "Optional"}
-                                    </span>
+                    {loading ? (
+                        <SkeletonDesktopRows rows={5} />
+                    ) : docs.length > 0 ? (
+                        docs.map((doc, index) => {
+                            const visibleFields = (doc?.extract_fields || []).slice(0, MAX_VISIBLE_FIELDS);
+                            const hiddenFields = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
+                            return (
+                                <div key={index} className="grid grid-cols-[50px_220px_120px_1fr_80px_100px] gap-4 px-5 py-2.5 hover:bg-gray-50 transition-colors items-center">
+                                    <div className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-semibold flex-shrink-0">{index + 1}</div>
+                                    <span className="text-[12px] font-bold text-gray-800 truncate">{doc.display_name}</span>
+                                    <div>
+                                        <span className={`text-[10px] font-semibold px-3 py-1 rounded-full ${doc.required === true ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"}`}>
+                                            {doc.required === true ? "Required" : "Optional"}
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                        {visibleFields.map((f) => <FieldTag key={f} label={f} />)}
+                                        {hiddenFields.length > 0 && <ExtraFieldsBadge fields={hiddenFields} />}
+                                    </div>
+                                    <span className="text-[13px] font-bold text-indigo-500">{doc.extract_fields_count ?? (doc?.extract_fields || []).length}</span>
+                                    <ActionButtons doc={doc} />
                                 </div>
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                    {visibleFields.map((f) => <FieldTag key={f} label={f} />)}
-                                    {hiddenFields.length > 0 && <ExtraFieldsBadge fields={hiddenFields} />}
-                                </div>
-                                <span className="text-[13px] font-bold text-indigo-500">
-                                    {doc.extract_fields_count ?? (doc?.extract_fields || []).length}
-                                </span>
-                                <ActionButtons doc={doc} />
-                            </div>
-                        );
-
-                    })}
-                    <div className="flex justify-center items-center ">
-                        {docs.length === 0 && (
-                            <tr>
-                                <td colSpan={6} className="px-5 py-10 text-center text-[13px] text-gray-400">
-                                    No Documents yet. Click <strong>+ Add Document</strong> to create one.
-                                </td>
-                            </tr>
-                        )}
-                    </div>
+                            );
+                        })
+                    ) : (
+                        <div className="px-5 py-10 text-center text-[13px] text-gray-400">
+                            No Documents yet. Click <strong>+ Add Document</strong> to create one.
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* ── MOBILE cards ── */}
             <div className="md:hidden flex flex-col gap-2">
-                {docs.map((doc, index) => {
-                    const visibleFields = (doc?.extract_fields || []).slice(0, MAX_VISIBLE_FIELDS);
-                    const hiddenFields = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
-                    return (
-                        <div key={index} className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex flex-col gap-3">
-                            {/* Top: number + name + actions */}
-                            <div className="flex items-start justify-between gap-2">
-                                <div className="flex items-center gap-2 min-w-0">
-                                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-semibold flex-shrink-0">
-                                        {index + 1}
+                {loading ? (
+                    <SkeletonMobileCards count={4} />
+                ) : docs.length > 0 ? (
+                    docs.map((doc, index) => {
+                        const visibleFields = (doc?.extract_fields || []).slice(0, MAX_VISIBLE_FIELDS);
+                        const hiddenFields = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
+                        return (
+                            <div key={index} className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex flex-col gap-3">
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-semibold flex-shrink-0">{index + 1}</span>
+                                        <span className="text-[13px] font-bold text-gray-800 leading-snug truncate">{doc.display_name}</span>
+                                    </div>
+                                    <ActionButtons doc={doc} />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className={`text-[10px] font-semibold px-3 py-1 rounded-full ${doc.required === true ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"}`}>
+                                        {doc.required === true ? "Required" : "Optional"}
                                     </span>
-                                    <span className="text-[13px] font-bold text-gray-800 leading-snug truncate">{doc.display_name}</span>
+                                    <span className="text-[11px] font-semibold text-indigo-500 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full">
+                                        {doc.extract_fields_count ?? (doc?.extract_fields || []).length} fields
+                                    </span>
                                 </div>
-                                <ActionButtons doc={doc} />
-                            </div>
-
-                            {/* Status + field count */}
-                            <div className="flex items-center gap-2">
-                                <span className={`text-[10px] font-semibold px-3 py-1 rounded-full ${doc.required == true ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"}`}>
-                                    {doc.required === true ? "Required" : "Optional"}
-                                </span>
-                                <span className="text-[11px] font-semibold text-indigo-500 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full">
-                                    {doc.extract_fields_count ?? (doc?.extract_fields || []).length} fields
-                                </span>
-                            </div>
-
-                            {/* Extract fields */}
-                            <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Extract Fields</p>
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                    {visibleFields.map((f) => <FieldTag key={f} label={f} />)}
-                                    {hiddenFields.length > 0 && <ExtraFieldsBadge fields={hiddenFields} />}
+                                <div>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Extract Fields</p>
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                        {visibleFields.map((f) => <FieldTag key={f} label={f} />)}
+                                        {hiddenFields.length > 0 && <ExtraFieldsBadge fields={hiddenFields} />}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    );
-                })}
-                <div className="flex justify-center items-center ">
-                    {docs.length === 0 && (
-                        <tr>
-                            <td colSpan={6} className="px-5 py-10 text-center text-[13px] text-gray-400">
-                                No Documents yet. Click <strong>+ Add Document</strong> to create one.
-                            </td>
-                        </tr>
-                    )}
-                </div>
+                        );
+                    })
+                ) : (
+                    <div className="px-5 py-10 text-center text-[13px] text-gray-400">
+                        No Documents yet. Click <strong>+ Add Document</strong> to create one.
+                    </div>
+                )}
             </div>
 
-            {/* Footer
-            <div className="flex flex-wrap sm:justify-end justify-start gap-3 pt-2">
-                <button className="text-[13px] font-semibold text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 px-5 py-2 rounded-lg transition-all">Discard Changes</button>
-                <button className="flex items-center gap-2 text-[13px] font-semibold text-white bg-[#6B55E8] hover:bg-[#5a45d4] px-5 py-2 rounded-lg transition-all">
-                    <Check size={13} /> Save Configuration
-                </button>
-            </div> */}
-
-            <style>{`
-                @keyframes slideIn { from { opacity:0; transform:translateX(60px); } to { opacity:1; transform:translateX(0); } }
-            `}</style>
+            <style>{`@keyframes slideIn { from { opacity:0; transform:translateX(60px); } to { opacity:1; transform:translateX(0); } }`}</style>
         </div>
     );
 };

@@ -9,7 +9,8 @@ const initialState = {
 // Hardcoded credentials as requested by the user
 const VALID_CREDENTIALS = {
   "prathap.r@paccore.com":"Paccore@01",
-  "sarah.r@paccore.com":"Paccore@01"
+  "sarah.r@paccore.com":"Paccore@01",
+  "shushrita.m@infoswift.com":"Paccore@01",
 };
 
 const authSlice = createSlice({
