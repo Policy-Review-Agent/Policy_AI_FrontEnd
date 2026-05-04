@@ -12,6 +12,11 @@ import Login from "./components/screens/Login/Login";
 import ValidatorSetup from "./components/screens/ValidatorSetup/ValidatorSetup"
 import AutoInsurance from "./components/screens/ValidatorSetup/AutoInsurance";
 import UploadFile from "./components/screens/UploadFile/UploadFile";
+import RedirectHandler from "./components/msalConfig/RedirectHandler";
+import PrivateRoutes from "./components/screens/Login/PrivateRoutes";
+import PrivateErrorRoute from "./components/screens/Login/PrivateErrorRoute";
+import Error from "./components/screens/Login/Error";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 const SCREENS = {
   dashboard: Dashboard,
@@ -35,7 +40,21 @@ const App = () => {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-bg overflow-hidden font-sans">
-        <Login />
+        <BrowserRouter>
+          {/* <Toaster position="top-center" reverseOrder={false} /> */}
+          <Routes>
+            <Route path="/redirect" element={<RedirectHandler />} />
+            <Route path="/" element={<Login />} />
+            <Route element={<PrivateRoutes />}>
+              <Route element={<Screen />} path="/home" exact />
+            </Route>
+            <Route element={<PrivateErrorRoute />}>
+              <Route element={<Error />} path="/Error" exact />
+            </Route>
+            <Route path="/Error" element={<Error />} />
+          </Routes>
+        </BrowserRouter>
+        {/* <Login /> */}
         <Toast />
       </div>
     );
