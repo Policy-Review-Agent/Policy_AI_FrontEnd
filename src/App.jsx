@@ -17,6 +17,7 @@ import PrivateRoutes from "./components/screens/Login/PrivateRoutes";
 import PrivateErrorRoute from "./components/screens/Login/PrivateErrorRoute";
 import Error from "./components/screens/Login/Error";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import AdminUserMain from "./components/screens/AdminUser/AdminUserMain";
 
 const SCREENS = {
   dashboard: Dashboard,
@@ -27,6 +28,7 @@ const SCREENS = {
   validatorsetup: ValidatorSetup,
   vadlidateInsurance: AutoInsurance,
   uploadfile: UploadFile,
+  adminuser:AdminUserMain,
 };
 
 const App = () => {

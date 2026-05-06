@@ -16,6 +16,7 @@ import {
     ArrowLeftSquare,
     LogOut,
     Upload ,
+    Users
 } from "lucide-react";
 import { getPolicySummary, getPolicyList } from "../api/apisCall";
 import { logout } from "../../store/slices/authSlice";
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
         children: ["vadlidateInsurance", "homeInsurance", "commercialInsurance"],
     },
     { id: "uploadfile",label: "Upload File", Icon: Upload, children: [] },
+    { id: "adminuser",label: "Admin Users", Icon: Users, children: [] },
 ];
 
 const Sidebar = ({ onClose, onNavigate }) => {
