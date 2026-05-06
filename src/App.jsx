@@ -12,6 +12,7 @@ import Login from "./components/screens/Login/Login";
 import ValidatorSetup from "./components/screens/ValidatorSetup/ValidatorSetup"
 import AutoInsurance from "./components/screens/ValidatorSetup/AutoInsurance";
 import UploadFile from "./components/screens/UploadFile/UploadFile";
+import AdminUserMain from "./components/screens/AdminUser/AdminUserMain";
 
 const SCREENS = {
   dashboard: Dashboard,
@@ -22,6 +23,7 @@ const SCREENS = {
   validatorsetup: ValidatorSetup,
   vadlidateInsurance: AutoInsurance,
   uploadfile: UploadFile,
+  adminuser:AdminUserMain,
 };
 
 const App = () => {

@@ -12,6 +12,8 @@ const TITLES = {
   validatorsetup: "Validator Setup",
   vadlidateInsurance: "Validator Setup",
   uploadfile: "Upload CSV",
+  adminuser:"Admin Users"
+
 };
 
 // sidebarOpen lets us optionally style the button differently when open
