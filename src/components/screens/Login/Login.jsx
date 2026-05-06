@@ -41,7 +41,6 @@ const Login = () => {
     if (token) {
       getUserDetails(sessionStorage.getItem("access_token"));
     } else {
-      console.log("inside hable login")
       handleLogin();
     }
   }, []);
