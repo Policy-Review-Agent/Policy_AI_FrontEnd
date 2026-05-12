@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { X, Check, ChevronDown, AlertTriangle, Pencil, Trash2 } from "lucide-react";
+import { X, Check, ChevronDown, AlertTriangle, Pencil, Trash2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { setValidatorDocDetails, setPolicyExtractedFields } from "../../../store/slices/validatorSetupSlice";
 import { createValidatorCrossCheckDetails, updateValidatorCrossCheckDetails, deleteValidatorCrossCheckDetails, getValidatorDocDetails, getPolicyExtractedFields } from "../../api/validatorApiCall";
@@ -399,7 +399,16 @@ const CrossValidationRuleTable = () => {
     const [confirmRule, setConfirmRule] = useState(null);
     const [saving, setSaving] = useState(false);
     const [toasts, setToasts] = useState([]);
+    const [sortOrder, setSortOrder] = useState(null);
 
+    const sortedDocs = [...rules].sort((a, b) => {
+        if (!sortOrder) return 0;
+        const nameA = a.check_name.toLowerCase();
+        const nameB = b.check_name.toLowerCase();
+        return sortOrder === "asc"
+            ? nameA.localeCompare(nameB)
+            : nameB.localeCompare(nameA);
+    });
     // Hide loader once cross_checks arrive
     useEffect(() => {
         if (validatorDocDetails?.cross_checks !== undefined) {
@@ -483,16 +492,39 @@ const CrossValidationRuleTable = () => {
                     <table className="w-full border-collapse">
                         <thead>
                             <tr className="bg-gray-50 border-b border-gray-100">
-                                {["CHECK NAME", "DESCRIPTION", "MATCH TYPE", "FIELD MAPPINGS", "STATUS", "ACTIONS"].map((h) => (
-                                    <th key={h} className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3 whitespace-nowrap">{h}</th>
-                                ))}
+                                {["CHECK NAME", "DESCRIPTION", "MATCH TYPE", "FIELD MAPPINGS", "STATUS", "ACTIONS"].map((h) => {
+                                    if (h === "CHECK NAME") {
+                                        return (
+                                            <th key={h} className="text-left px-5 py-3 whitespace-nowrap">
+                                                <button
+                                                    onClick={() =>
+                                                        setSortOrder((prev) =>
+                                                            prev === "asc" ? "desc" : prev === "desc" ? null : "asc"
+                                                        )
+                                                    }
+                                                    className="flex items-center gap-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wider hover:text-indigo-500 transition-colors"
+                                                >
+                                                    {h}
+                                                    {sortOrder === "asc" && <ArrowUp size={11} className="text-indigo-500" />}
+                                                    {sortOrder === "desc" && <ArrowDown size={11} className="text-indigo-500" />}
+                                                    {!sortOrder && <ArrowUpDown size={11} className="text-gray-300" />}
+                                                </button>
+                                            </th>
+                                        );
+                                    }
+                                    return (
+                                        <th key={h} className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3 whitespace-nowrap">
+                                            {h}
+                                        </th>
+                                    );
+                                })}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <SkeletonDesktopRows rows={5} />
-                            ) : rules.length > 0 ? (
-                                rules.map((rule) => (
+                            ) : sortedDocs.length > 0 ? (
+                                sortedDocs.map((rule, index) => (
                                     <tr key={rule.id} className="hover:bg-gray-50 transition-colors align-top">
                                         <td className="px-5 py-4 w-[180px]"><span className="text-[12px] font-bold text-gray-800 font-mono break-all">{rule.check_name || rule.name}</span></td>
                                         <td className="px-5 py-4 w-[200px]"><p className="text-[12px] text-gray-400 font-medium leading-relaxed">{rule.description}</p></td>
@@ -525,8 +557,8 @@ const CrossValidationRuleTable = () => {
             <div className="md:hidden flex flex-col gap-2">
                 {loading ? (
                     <SkeletonMobileCards count={4} />
-                ) : rules.length > 0 ? (
-                    rules.map((rule) => (
+                ) : sortedDocs.length > 0 ? (
+                    sortedDocs.map((rule, index) => (
                         <div key={rule.id} className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex flex-col gap-3">
                             <div className="flex items-start justify-between gap-2">
                                 <span className="text-[12px] font-bold text-gray-800 font-mono break-all flex-1">{rule.check_name || rule.name}</span>

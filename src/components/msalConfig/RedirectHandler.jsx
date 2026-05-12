@@ -61,7 +61,7 @@ export default function RedirectHandler() {
       }}
     >
       <img
-        src="/assets/images/Spinner.gif"
+        src="/assets/images/Policy AI Check Mark.gif"
         alt="Loading..."
         style={{ width: 300, height: 300 }}
       />

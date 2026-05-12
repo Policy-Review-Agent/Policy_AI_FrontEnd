@@ -4,6 +4,7 @@ import { selectBatch, setPolicySummary, setPolicyList } from "../../../store/sli
 import { navigate } from "../../../store/slices/navigationSlice";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { getPolicySummary, getPolicyList } from "../../api/apisCall";
+import { current } from "@reduxjs/toolkit";
 
 const STATUS_MAP = {
   completed: "bg-green-50 text-green-600",
@@ -12,7 +13,7 @@ const STATUS_MAP = {
   processing: "bg-blue-50 text-blue-600",
 };
 
-const BatchCard = ({ batch }) => {
+const BatchCard = ({ batch, index }) => {
   const dispatch = useDispatch();
 
   const handleOpen = () => {
@@ -29,7 +30,11 @@ const BatchCard = ({ batch }) => {
         onClick={handleOpen}
         className="hidden md:table-row border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors last:border-b-0"
       >
-        <td className="px-4 py-1.5 text-[13px] font-bold text-gray-700">{batch.batch_number}</td>
+        {/* Serial / Batch ID column */}
+        <td className="px-4 py-1.5 text-[13px] font-bold text-gray-700">
+          {batch.serial}
+        </td>
+
         <td className="px-4 py-1.5 text-[13px] text-gray-600">{batch.batch_date}</td>
         <td className="px-4 py-1.5 text-[13px] font-bold text-gray-700">{batch.total_policies}</td>
         <td className="px-4 py-1.5 text-[13px] font-semibold text-green-600">{batch.processed}</td>
@@ -56,23 +61,19 @@ const BatchCard = ({ batch }) => {
             onClick={handleOpen}
             className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 shadow-sm active:bg-gray-50 cursor-pointer transition-colors"
           >
-            {/* Left content */}
             <div className="flex-1 min-w-0">
-              {/* Batch ID + status */}
               <div className="flex justify-between items-center gap-2 flex-wrap mb-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-[12px] font-semibold text-primary font-mono">{batch.batch_number}</span>
+                  <span className="text-[12px] font-semibold text-primary font-mono">
+                    #{batch.serial}
+                  </span>
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_MAP[batch.status] || "bg-gray-100 text-gray-500"}`}>
                     {batch.status}
                   </span>
                 </div>
-                <div>
-                  <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
-                </div>
+                <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
               </div>
-              {/* Date */}
               <p className="text-[11px] text-gray-400 mb-2">{batch.batch_date}</p>
-              {/* Stats row */}
               <div className="flex gap-3 text-[11px] text-gray-500">
                 <span>Total <strong className="text-gray-800">{batch.total_policies}</strong></span>
                 <span>Done <strong className="text-green-600">{batch.processed}</strong></span>

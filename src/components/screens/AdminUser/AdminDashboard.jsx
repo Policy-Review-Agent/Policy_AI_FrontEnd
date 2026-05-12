@@ -135,7 +135,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Row 2 — Users by Office + Users by Location */}
-            <div className="flex gap-4">
+            {/* <div className="flex gap-4">
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-md p-4 flex-1">
                     <h3 className="text-[14px] font-bold text-gray-800 mb-3">Users by office</h3>
                     {OFFICES.map((o, i) => (
@@ -149,7 +149,7 @@ const AdminDashboard = () => {
                         <BarRow key={i} label={l.city} count={l.count} color={l.color} pct={l.pct} showIcon />
                     ))}
                 </div>
-            </div>
+            </div> */}
 
             {/* Row 3 — Recently Added Table */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-md ">

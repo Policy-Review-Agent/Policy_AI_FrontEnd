@@ -1,4 +1,6 @@
+import { Upload } from "lucide-react";
 import { getApi } from "./getApi"
+import { postApi } from "./postApi";
 
 export const getDashboardStats = async (setDashboardStats, dispatch) => {
     try {
@@ -105,3 +107,21 @@ export const getDocumentData = async (setDocumentData, id, dispatch, checklistId
         return { data: null, error: error.response?.data || error.message };
     }
 }
+
+export const UploadCSVFile = async (file) => {
+    try {
+        const formData = new FormData();
+        formData.append("file", file);  // "file" matches your Postman key
+
+        const response = await postApi(
+            "/api/frontend/documents/upload/",
+            formData,
+            { "Content-Type": "multipart/form-data" }  // 👈 override here
+        );
+
+        return { data: response.data, error: null };
+    } catch (error) {
+        console.log("Error File Uploading:", error);
+        return { data: null, error: error.message };
+    }
+};

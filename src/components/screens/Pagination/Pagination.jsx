@@ -18,7 +18,7 @@ const Pagination = ({ records, rowsPerPage, currentPage, onPageChange, onRowsPer
 
     // Build page numbers with ellipsis
     const getPageNumbers = () => {
-        if (totalPages <= 5) {
+        if (totalPages <= 4) {
             return Array.from({ length: totalPages }, (_, i) => i + 1);
         }
         const pageSet = new Set([1, totalPages, currentPage]);

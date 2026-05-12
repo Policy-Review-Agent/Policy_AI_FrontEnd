@@ -79,16 +79,16 @@ const ChecklistRow = ({ doc, onViewDoc, index }) => {
         </td>
         <td className="px-4 py-1.5"><RulePips /></td>
         <td className="px-4 py-1.5">
-          {confidenceValue ? (
+          {/* {confidenceValue ? ( */}
             <button
               onClick={onViewDoc}
               className="flex items-center gap-1 text-[11px] font-semibold text-gray-500 border border-gray-200 bg-white hover:border-gray-300 hover:text-gray-700 px-2.5 py-1 rounded-md transition"
             >
               <Folder size={11} /> View
             </button>
-          ) : (
-            <span className="text-gray-300 text-xs">—</span>
-          )}
+          {/* // ) : (
+          //   <span className="text-gray-300 text-xs">—</span>
+          // )} */}
         </td>
       </tr>
 

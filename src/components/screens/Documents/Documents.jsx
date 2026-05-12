@@ -105,7 +105,8 @@ const Documents = () => {
             </div>
 
             {/* DESKTOP */}
-            <div className="hidden md:grid grid-cols-[320px,1fr] bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden min-h-[620px]">
+            {/* <div className="hidden md:grid grid-cols-[320px,1fr] bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden min-h-[620px]"> */}
+            <div className="hidden md:grid grid-cols-[320px,1fr] bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden min-h-[620px] max-h-[620px]">
                 <DocumentList
                     activeList={activeList}
                     selectedDocViewerIdx={selectedDocViewerIdx}

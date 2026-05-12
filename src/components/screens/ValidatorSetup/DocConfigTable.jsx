@@ -3,7 +3,7 @@ import { X, Check, ChevronDown, Search, AlertTriangle, Pencil, Trash2 } from "lu
 import { useDispatch, useSelector } from "react-redux";
 import { setValidatorDocDetails, setPolicyExtractedFields } from "../../../store/slices/validatorSetupSlice";
 import { createValidatorDocDetails, getValidatorDocDetails, deleteValidatorDocDetails, updateValidatorDocDetails, getPolicyExtractedFields } from "../../api/validatorApiCall";
-
+import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 const MAX_VISIBLE_FIELDS = 2;
 
 // ── Skeleton rows (desktop) ───────────────────────────────────────────────────
@@ -398,6 +398,16 @@ const DocConfigTable = () => {
     const [editDoc, setEditDoc] = useState(null);
     const [confirmDoc, setConfirmDoc] = useState(null);
     const [toasts, setToasts] = useState([]);
+    const [sortOrder, setSortOrder] = useState(null);
+
+    const sortedDocs = [...docs].sort((a, b) => {
+        if (!sortOrder) return 0;
+        const nameA = a.display_name.toLowerCase();
+        const nameB = b.display_name.toLowerCase();
+        return sortOrder === "asc"
+            ? nameA.localeCompare(nameB)
+            : nameB.localeCompare(nameA);
+    });
 
     // Hide loader once documents arrive
     useEffect(() => {
@@ -483,15 +493,36 @@ const DocConfigTable = () => {
             {/* ── DESKTOP table ── */}
             <div className="hidden md:block bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                 <div className="grid grid-cols-[50px_220px_120px_1fr_80px_100px] gap-4 px-5 py-2.5 bg-gray-50 border-b border-gray-100">
-                    {["#", "DOCUMENT TYPE", "STATUS", "EXTRACT FIELDS", "FIELDS", "ACTIONS"].map((h) => (
-                        <p key={h} className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{h}</p>
-                    ))}
+                    {/* Replace just this one header cell in your .map() */}
+                    {["#", "DOCUMENT TYPE", "STATUS", "EXTRACT FIELDS", "FIELDS", "ACTIONS"].map((h) => {
+                        if (h === "DOCUMENT TYPE") {
+                            return (
+                                <button
+                                    key={h}
+                                    onClick={() =>
+                                        setSortOrder((prev) =>
+                                            prev === "asc" ? "desc" : prev === "desc" ? null : "asc"
+                                        )
+                                    }
+                                    className="flex items-center gap-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wider hover:text-indigo-500 transition-colors"
+                                >
+                                    {h}
+                                    {sortOrder === "asc" && <ArrowUp size={11} className="text-indigo-500" />}
+                                    {sortOrder === "desc" && <ArrowDown size={11} className="text-indigo-500" />}
+                                    {!sortOrder && <ArrowUpDown size={11} className="text-gray-300" />}
+                                </button>
+                            );
+                        }
+                        return (
+                            <p key={h} className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{h}</p>
+                        );
+                    })}
                 </div>
                 <div className="divide-y divide-gray-100">
                     {loading ? (
                         <SkeletonDesktopRows rows={5} />
-                    ) : docs.length > 0 ? (
-                        docs.map((doc, index) => {
+                    ) : sortedDocs.length > 0 ? (
+                        sortedDocs.map((doc, index) => {
                             const visibleFields = (doc?.extract_fields || []).slice(0, MAX_VISIBLE_FIELDS);
                             const hiddenFields = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
                             return (
@@ -524,8 +555,8 @@ const DocConfigTable = () => {
             <div className="md:hidden flex flex-col gap-2">
                 {loading ? (
                     <SkeletonMobileCards count={4} />
-                ) : docs.length > 0 ? (
-                    docs.map((doc, index) => {
+                ) : sortedDocs.length > 0 ? (
+                    sortedDocs.map((doc, index) => {
                         const visibleFields = (doc?.extract_fields || []).slice(0, MAX_VISIBLE_FIELDS);
                         const hiddenFields = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
                         return (
