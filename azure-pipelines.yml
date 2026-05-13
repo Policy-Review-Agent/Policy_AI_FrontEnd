@@ -1,0 +1,61 @@
+# Azure Pipelines build for Policy AI Frontend (Vite + React)
+# Triggers a CI build on Dev and master. Produces a 'drop' artifact
+# containing the built dist/ folder for downstream Release pipelines.
+
+trigger:
+  branches:
+    include:
+      - Dev
+      - master
+
+pr: none
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  nodeVersion: '22.x'
+  buildArtifactName: 'drop'
+
+steps:
+  - checkout: self
+    displayName: 'Checkout source'
+    fetchDepth: 1
+
+  - task: NodeTool@0
+    displayName: 'Use Node.js $(nodeVersion)'
+    inputs:
+      versionSpec: '$(nodeVersion)'
+
+  - task: Cache@2
+    displayName: 'Cache npm'
+    inputs:
+      key: 'npm | "$(Agent.OS)" | package-lock.json'
+      restoreKeys: |
+        npm | "$(Agent.OS)"
+      path: '$(Pipeline.Workspace)/.npm'
+
+  - script: npm ci --cache $(Pipeline.Workspace)/.npm --prefer-offline
+    displayName: 'Install dependencies (npm ci)'
+
+  - script: npm run lint
+    displayName: 'Lint'
+    continueOnError: true
+
+  - script: npm run build
+    displayName: 'Build (vite build)'
+
+  - task: CopyFiles@2
+    displayName: 'Stage build output'
+    inputs:
+      SourceFolder: 'dist'
+      Contents: '**'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+      CleanTargetFolder: true
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish artifact: $(buildArtifactName)'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: '$(buildArtifactName)'
+      publishLocation: 'Container'
