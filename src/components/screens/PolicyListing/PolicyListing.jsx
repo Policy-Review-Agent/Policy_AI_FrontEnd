@@ -84,9 +84,8 @@ const SkeletonMobileCards = ({ count = 4 }) => (
 const PolicyListing = () => {
     const dispatch = useDispatch();
     const batch = useSelector(selectCurrentBatch);
-    const { policySummary, policyList } = useSelector((state) => state.batch);
+    const { policySummary, policyList, } = useSelector((state) => state.batch);
     const policies = useSelector(selectCurrentPolicies);
-
     const [searchTerm, setSearchTerm] = useState("");
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
@@ -166,8 +165,8 @@ const PolicyListing = () => {
                     </span>
                     <div className="text-sm text-gray-500 flex gap-3">
                         <span>Total: <strong className="text-gray-800">{policySummary?.total_policies}</strong></span>
-                        <span>Processed: <strong className="text-green-600">{policySummary?.processed}</strong></span>
-                        <span>Pending: <strong className="text-amber-500">{policySummary?.pending}</strong></span>
+                        <span>Read For Review: <strong className="text-green-600">{policySummary?.processed}</strong></span>
+                        <span>Reviewed: <strong className="text-amber-500">{policySummary?.pending}</strong></span>
                     </div>
                 </div>
             </div>
@@ -198,8 +197,8 @@ const PolicyListing = () => {
                                             key={h}
                                             onClick={() => isSortable && handleSort(h)}
                                             className={`text-[11px] font-semibold uppercase tracking-wider px-4 py-2.5 border-b border-gray-100 whitespace-nowrap select-none transition-colors ${isSortable
-                                                    ? "cursor-pointer hover:bg-gray-100 hover:text-gray-600"
-                                                    : "cursor-default"
+                                                ? "cursor-pointer hover:bg-gray-100 hover:text-gray-600"
+                                                : "cursor-default"
                                                 } ${sortField === h ? "text-indigo-500" : "text-gray-400"}`}
                                         >
                                             {h}
@@ -234,7 +233,7 @@ const PolicyListing = () => {
                                         {/* Customer */}
                                         <td className="px-4 py-1.5 max-w-[140px]">
                                             <div className="relative group w-full">
-                                                <p className="text-[13px] font-semibold text-gray-800 truncate">{p.customer_name}</p>
+                                                <p className="text-[13px] font-semibold text-gray-800 truncate">{p.customer_name || "-"}</p>
                                                 <div className="absolute left-0 -top-8 mt-1.5 z-50 hidden group-hover:block">
                                                     <div className="bg-gray-800 text-white text-[11px] font-medium px-2.5 py-1.5 rounded-md shadow-lg whitespace-nowrap">{p.customer_name}</div>
                                                 </div>
@@ -242,26 +241,26 @@ const PolicyListing = () => {
                                         </td>
 
                                         {/* Customer Office Name */}
-                                        <td className="px-4 py-1.5 text-[13px] font-semibold text-gray-800">{p.customer_office_name}</td>
+                                        <td className="px-4 py-1.5 text-[13px] font-semibold text-gray-800">{p.customer_office_name || "-"}</td>
 
                                         {/* Customer CSR */}
-                                        <td className="px-4 py-1.5 text-[13px] font-semibold text-gray-800 truncate">{p.customer_csr}</td>
+                                        <td className="px-4 py-1.5 text-[13px] font-semibold text-gray-800 truncate">{p.customer_csr || "-"}</td>
 
                                         {/* Type */}
-                                        <td className="px-4 py-1.5 text-[13px] text-gray-500 truncate">{p.policy_type}</td>
+                                        <td className="px-4 py-1.5 text-[13px] text-gray-500 truncate">{p.policy_type || "-"}</td>
 
                                         {/* Sold Date */}
                                         <td className="px-4 py-1.5 max-w-[140px]">
                                             <div className="relative group w-full">
-                                                <p className="text-[13px] text-gray-500 truncate">{p.sold_date}</p>
+                                                <p className="text-[13px] text-gray-500 truncate">{p.sold_date || "-"}</p>
                                                 <div className="absolute left-0 -top-8 mt-1.5 z-50 hidden group-hover:block">
-                                                    <div className="bg-gray-800 text-white text-[11px] font-medium px-2.5 py-1.5 rounded-md shadow-lg whitespace-nowrap">{p.sold_date}</div>
+                                                    <div className="bg-gray-800 text-white text-[11px] font-medium px-2.5 py-1.5 rounded-md shadow-lg whitespace-nowrap">{p.sold_date || "null"}</div>
                                                 </div>
                                             </div>
                                         </td>
 
                                         {/* Docs */}
-                                        <td className="px-4 py-1.5 text-[13px] font-bold text-gray-800">{p.documents_count}</td>
+                                        <td className="px-4 py-1.5 text-[13px] font-bold text-gray-800">{p.documents_count || "0"}</td>
 
                                         {/* AI Status */}
                                         <td className="px-4 py-1.5">

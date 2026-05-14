@@ -33,7 +33,7 @@ const SCREENS = {
 
 const App = () => {
   const screen = useSelector((s) => s.navigation.screen);
-  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  // const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const Screen = SCREENS[screen] || Dashboard;
 
   // Single source of truth for sidebar open state

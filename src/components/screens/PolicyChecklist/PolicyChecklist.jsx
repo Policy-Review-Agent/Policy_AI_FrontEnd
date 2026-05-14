@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { navigate } from "../../../store/slices/navigationSlice";
-import { selectCurrentPolicy, selectCurrentBatch, setChecklistSummary, setPolicyList, setPolicyCheckList, setDocumentData } from "../../../store/slices/batchSlice";
+import { selectCurrentPolicy, selectCurrentBatch, setChecklistSummary, setPolicyList, setPolicyCheckList, setDocumentData, } from "../../../store/slices/batchSlice";
 import { setSelectedDocViewerIdx } from "../../../store/slices/validationSlice";
-import { getChecklistSummary, getPolicyList, getPolicyCheckList, getDocumentData } from "../../api/apisCall";
+import { getChecklistSummary, getPolicyList, getPolicyCheckList, getDocumentData, checkPolicyReviwed } from "../../api/apisCall";
 import { ArrowLeft, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import Breadcrumb from "../../layout/Breadcrumb";
 import ChecklistRow from "./ChecklistRow";
@@ -82,8 +82,7 @@ const PolicyChecklist = () => {
     const dispatch = useDispatch();
     const policy = useSelector(selectCurrentPolicy);
     const batch = useSelector(selectCurrentBatch);
-    const { checklistSummary, policyCheckList } = useSelector((state) => state.batch);
-
+    const { checklistSummary, policyCheckList, policyList, selectedPolicyIdx } = useSelector((state) => state.batch);
     const [loading, setLoading] = useState(true);
     const [sortDir, setSortDir] = useState(null); // null | "asc" | "desc"
 
@@ -98,7 +97,7 @@ const PolicyChecklist = () => {
                 if (batch?.batch_id && !policy) {
                     await getPolicyList(setPolicyList, batch.batch_id, dispatch);
                 }
-                if (policy) {
+                if (policy.policy_id) {
                     const idStr = policy.policy_id;
                     await getChecklistSummary(setChecklistSummary, idStr, dispatch);
                     await getPolicyCheckList(setPolicyCheckList, idStr, dispatch);
@@ -110,7 +109,7 @@ const PolicyChecklist = () => {
             }
         };
         fetchData();
-    }, [batch?.batch_id, policy, dispatch]);
+    }, [batch?.batch_id,dispatch]);
 
     // ── Sort handler — cycles: null → asc → desc → null ──
     const handleSort = () => {
@@ -148,6 +147,14 @@ const PolicyChecklist = () => {
         dispatch(navigate("documents"));
     };
 
+    const handleCheckReviwed = () => {
+        const policyId = policyList[selectedPolicyIdx].policy_id;
+        checkPolicyReviwed(policyId);
+        setTimeout(()=>{
+            getPolicyList(setPolicyList, batch.batch_id, dispatch);
+        },[2000])
+        
+    }
     return (
         <div>
             <Breadcrumb
@@ -220,7 +227,9 @@ const PolicyChecklist = () => {
                 <div className="flex items-center justify-between px-5 py-2.5 border-b border-gray-100">
                     <p className="text-[15px] font-semibold text-gray-800">Required Documents</p>
                     <div className="flex gap-2">
-                        <button className="flex-shrink-0 flex items-center gap-1 h-8 px-3 text-[13px] font-semibold text-white bg-[#6B55E8] hover:bg-[#5a45d4] rounded-md transition-all whitespace-nowrap">
+                        <button className="flex-shrink-0 flex items-center gap-1 h-8 px-3 text-[13px] font-semibold text-white bg-[#6B55E8] hover:bg-[#5a45d4] rounded-md transition-all whitespace-nowrap"
+                            onClick={handleCheckReviwed}
+                        >
                             Reviewed
                         </button>
                         <span className="text-[11px] font-semibold bg-green-50 text-green-600 px-2.5 py-1 rounded-full">

@@ -5,6 +5,7 @@ import { login, clearError } from "../../../store/slices/authSlice";
 import { Shield, Mail, Lock, ArrowRight } from "lucide-react";
 import { loginRequest, msalInstance } from "../../msalConfig/msalConfig";
 import { setLoginDetails } from "../../../store/slices/navigationSlice";
+import { getUserInfo } from "../../api/getUserInfo";
 
 const Login = () => {
    const navigate = useNavigate();
@@ -22,11 +23,6 @@ const Login = () => {
         sessionStorage.setItem("display_name", resp.data?.display_name);
         navigate("/home", { replace: true });
 
-        // setTimeout(() => {
-        //   console.log("After navigating to home");
-        //   console.log("Current path:", window.location.pathname);
-        //   console.log("History length:", window.history.length);
-        // }, 100);
       } else {
         navigate("/Error", { replace: true });
       }

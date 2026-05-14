@@ -125,3 +125,15 @@ export const UploadCSVFile = async (file) => {
         return { data: null, error: error.message };
     }
 };
+
+export const checkPolicyReviwed = async (id) => {
+    try {
+        const response = await postApi(`/api/frontend/policies/${id}/mark-reviewed/`, {
+            policy_id: id
+        })
+        return { data: response.data, error: null };
+    } catch (error) {
+        console.log("Error File Uploading:", error);
+        return { data: null, error: error.message };
+    }
+}

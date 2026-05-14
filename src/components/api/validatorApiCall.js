@@ -116,7 +116,7 @@ export const getDocumentTypeOptions = async (setDocumentTypes, dispatch) => {
     try {
         const response = await getApi(`/api/frontend/reference/document-types/`, {
         })
-       
+
         if (response?.data?.data) {
             dispatch(setDocumentTypes(response?.data?.data || []))
         }
@@ -134,6 +134,17 @@ export const getPolicyExtractedFields = async (policyId, dispatch, setPolicyExtr
         }
     } catch (error) {
         console.log("FULL ERROR:", error.response);
+        return { data: null, error: error.response?.data || error.message };
+    }
+}
+
+export const depolyValidatorRule = async (id) => {
+    try {
+        const response = await postApi(`/api/frontend/validators/${id}/deploy/`, {
+        })
+        return { data: response.data, error: null };
+    } catch (error) {
+        console.log("Full ERROR :", error.response)
         return { data: null, error: error.response?.data || error.message };
     }
 }

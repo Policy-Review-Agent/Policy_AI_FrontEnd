@@ -143,7 +143,8 @@ const Dashboard = () => {
 
     // ── Compute per-date serial numbers ──
     const paginatedListWithSerial = paginatedList.map((batch) => {
-        const sameDate = sortedData.filter((b) => b.batch_date === batch.batch_date);
+        const batchDateOnly = batch.batch_date?.slice(0, 10); // "2026-05-09"
+        const sameDate = sortedData.filter((b) => b.batch_date?.slice(0, 10) === batchDateOnly);
         const serial = sameDate.findIndex((b) => b.batch_id === batch.batch_id) + 1;
         return { ...batch, serial };
     });
@@ -209,8 +210,8 @@ const Dashboard = () => {
                                             key={h}
                                             onClick={() => isSortable && handleSort(h)}
                                             className={`text-[11px] font-semibold uppercase tracking-wider px-3 py-2.5 border-b border-gray-100 whitespace-nowrap select-none transition-colors ${isSortable
-                                                    ? "cursor-pointer hover:bg-gray-100 hover:text-gray-600"
-                                                    : "cursor-default"
+                                                ? "cursor-pointer hover:bg-gray-100 hover:text-gray-600"
+                                                : "cursor-default"
                                                 } ${sortField === h ? "text-indigo-500" : "text-gray-800"}`}
                                         >
                                             {h}

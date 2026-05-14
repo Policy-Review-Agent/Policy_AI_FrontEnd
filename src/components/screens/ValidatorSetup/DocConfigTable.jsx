@@ -287,11 +287,15 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
     const canSave = docType.trim() !== "" && fields.length > 0;
     const filteredDocs = documentTypes?.filter((d) => d.display_name.toLowerCase().includes(docSearch.toLowerCase())) || [];
 
+
     const handleSave = async () => {
         if (!canSave) return;
         try {
             setLoading(true);
-            const payload = { document_type: docType, display_name: docType, required, description, extract_fields: fields };
+            const formattedType = docType
+                .toLowerCase()
+                .replace(/\s+/g, "_");
+            const payload = { document_type: formattedType, display_name: docType, required, description, extract_fields: fields };
             if (isEdit && editDoc?.id) {
                 await updateValidatorDocDetails(editDoc.id, payload);
             } else {
