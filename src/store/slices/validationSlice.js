@@ -1,12 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
-// import { valDocs as initialDocs } from "../../data/validation";
 
-const clone = (o) => JSON.parse(JSON.stringify(o));
 
 const validationSlice = createSlice({
     name: "validation",
     initialState: {
-        docs: clone([]), // initialDocs
+        docs: [],
         curDocIdx: 0,
         selectedDocViewerIdx: 0,
         zoom: 1,
@@ -20,7 +18,7 @@ const validationSlice = createSlice({
         approveAllFields: (state) => { state.docs[state.curDocIdx].fields.forEach((f) => (f.st = "approved")); },
         setZoom: (state, a) => { state.zoom = a.payload; },
         setZoom2: (state, a) => { state.zoom2 = a.payload; },
-        resetDocs: (state) => { state.docs = clone(initialDocs); state.curDocIdx = 0; },
+        resetDocs: (state) => { state.docs = []; state.curDocIdx = 0; },
     },
 });
 

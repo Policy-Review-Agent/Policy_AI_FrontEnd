@@ -109,7 +109,7 @@ const PolicyChecklist = () => {
             }
         };
         fetchData();
-    }, [batch?.batch_id,dispatch]);
+    }, [batch?.batch_id, dispatch, policy]);
 
     // ── Sort handler — cycles: null → asc → desc → null ──
     const handleSort = () => {
@@ -150,10 +150,10 @@ const PolicyChecklist = () => {
     const handleCheckReviwed = () => {
         const policyId = policyList[selectedPolicyIdx].policy_id;
         checkPolicyReviwed(policyId);
-        setTimeout(()=>{
+        setTimeout(() => {
             getPolicyList(setPolicyList, batch.batch_id, dispatch);
-        },[2000])
-        
+        }, [2000])
+
     }
     return (
         <div>

@@ -133,20 +133,19 @@ const ValidationBadge = ({ value }) => {
 
 // ─── Right-side slide-in User Detail Panel ────────────────────────────────────
 const UserDetailPanel = ({ user, onClose }) => {
-    const [visible, setVisible] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        if (user) {
-            // Small delay so the slide animation triggers after mount
-            const t = setTimeout(() => setVisible(true), 10);
-            return () => clearTimeout(t);
-        } else {
-            setVisible(false);
-        }
+        if (!user) return;
+        const t = setTimeout(() => setMounted(true), 10);
+        return () => {
+            clearTimeout(t);
+            setMounted(false);          // cleanup runs when user changes/unmounts — not a cascading render
+        };
     }, [user]);
 
     const handleClose = () => {
-        setVisible(false);
+        setMounted(false);
         setTimeout(onClose, 300);
     };
 
@@ -157,19 +156,16 @@ const UserDetailPanel = ({ user, onClose }) => {
 
     return (
         <>
-            {/* Backdrop */}
             <div
                 onClick={handleClose}
                 className="fixed inset-0 bg-black/30 z-40 transition-opacity duration-300"
-                style={{ opacity: visible ? 1 : 0 }}
+                style={{ opacity: mounted ? 1 : 0 }}
             />
-
-            {/* Slide panel */}
             <div
                 className="fixed top-0 right-0 h-full z-50 bg-white shadow-2xl flex flex-col"
                 style={{
                     width: "clamp(320px, 38vw, 480px)",
-                    transform: visible ? "translateX(0)" : "translateX(100%)",
+                    transform: mounted ? "translateX(0)" : "translateX(100%)",
                     transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1)",
                 }}
             >
@@ -189,7 +185,6 @@ const UserDetailPanel = ({ user, onClose }) => {
 
                 {/* ── Scrollable content ── */}
                 <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
-
                     {/* Profile card */}
                     <div className="mx-4 mt-4 mb-3 bg-gray-50 rounded-2xl px-4 py-4 flex items-center gap-4">
                         <div
@@ -239,10 +234,7 @@ const UserDetailPanel = ({ user, onClose }) => {
                             {[
                                 { label: "Role", value: user.role },
                                 { label: "Office", value: user.office },
-                                {
-                                    label: "Location", value: user.location,
-                                    dot: user.locColor
-                                },
+                                { label: "Location", value: user.location, dot: user.locColor },
                                 { label: "Joined", value: user.date },
                                 { label: "Last Login", value: user.lastLogin },
                                 { label: "API Calls", value: user.apiCalls },
@@ -274,9 +266,7 @@ const UserDetailPanel = ({ user, onClose }) => {
                         </p>
                         <div className="flex flex-col gap-1.5">
                             {user.activity.map((a, i) => {
-                                const parts = a.bold
-                                    ? a.label.split(a.bold)
-                                    : [a.label];
+                                const parts = a.bold ? a.label.split(a.bold) : [a.label];
                                 return (
                                     <div
                                         key={i}

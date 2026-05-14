@@ -4,7 +4,6 @@ import { selectBatch, setPolicySummary, setPolicyList } from "../../../store/sli
 import { navigate } from "../../../store/slices/navigationSlice";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { getPolicySummary, getPolicyList } from "../../api/apisCall";
-import { current } from "@reduxjs/toolkit";
 
 const STATUS_MAP = {
   completed: "bg-green-50 text-green-600",
@@ -13,7 +12,7 @@ const STATUS_MAP = {
   processing: "bg-blue-50 text-blue-600",
 };
 
-const BatchCard = ({ batch, index }) => {
+const BatchCard = ({ batch }) => {
   const dispatch = useDispatch();
 
   const handleOpen = () => {

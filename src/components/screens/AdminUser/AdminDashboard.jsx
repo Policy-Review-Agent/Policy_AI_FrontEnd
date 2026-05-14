@@ -1,5 +1,5 @@
 import React from "react";
-import { Users, CheckCircle, AlertTriangle, Activity, MapPin } from "lucide-react";
+import { Users, CheckCircle, AlertTriangle, Activity } from "lucide-react";
 
 // ─── Dummy Data ───────────────────────────────────────────────────────────────
 const STATS = [
@@ -71,18 +71,21 @@ const HEADERS = [
 ];
 
 // ─── Sub Components ───────────────────────────────────────────────────────────
-const StatCard = ({ label, value, sub, icon: Icon, iconBg, iconColor }) => (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-md p-4 flex items-center gap-3 flex-1 min-w-0">
-        <div className="rounded-xl p-2.5 flex-shrink-0" style={{ backgroundColor: iconBg }}>
-            <Icon size={16} style={{ color: iconColor }} />
+const StatCard = ({ label, value, sub, icon, iconBg, iconColor }) => {
+    const Icon = icon;
+    return (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-md p-4 flex items-center gap-3 flex-1 min-w-0">
+            <div className="rounded-xl p-2.5 flex-shrink-0" style={{ backgroundColor: iconBg }}>
+                <Icon size={16} style={{ color: iconColor }} />
+            </div>
+            <div className="min-w-0">
+                <p className="text-[10px] font-semibold text-gray-400 tracking-widest uppercase truncate">{label}</p>
+                <p className="text-xl font-bold text-indigo-600 leading-tight">{value}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5 truncate">{sub}</p>
+            </div>
         </div>
-        <div className="min-w-0">
-            <p className="text-[10px] font-semibold text-gray-400 tracking-widest uppercase truncate">{label}</p>
-            <p className="text-xl font-bold text-indigo-600 leading-tight">{value}</p>
-            <p className="text-[11px] text-gray-400 mt-0.5 truncate">{sub}</p>
-        </div>
-    </div>
-);
+    );
+};
 
 // ─── Mobile User Card ─────────────────────────────────────────────────────────
 const UserCard = ({ u, i }) => {
@@ -244,7 +247,7 @@ const AdminDashboard = () => {
                     <span className="text-[11px] text-gray-400">Last sync: 2026-03-20 14:32 UTC</span>
                 </div>
 
-                {/* Right — wraps on mobile */}
+                {/* Right */}
                 <div className="flex items-center gap-5 flex-wrap">
                     {[
                         { label: "Tenant",  value: "YourCompany"    },

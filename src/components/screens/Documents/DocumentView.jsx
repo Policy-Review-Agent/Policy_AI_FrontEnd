@@ -75,7 +75,7 @@ const PdfCanvasViewer = ({ url, zoom, initialPage = 1, pageRanges }) => {
 
         init();
         return () => { cancelled = true; };
-    }, [url]);
+    }, [url, initialPage]);
 
     React.useEffect(() => {
         setPageNum(initialPage);

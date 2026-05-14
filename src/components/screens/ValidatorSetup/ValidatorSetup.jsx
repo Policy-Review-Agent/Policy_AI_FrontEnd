@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useState, useMemo,useRef } from "react";
 import ValidatorBreadcrumb from "./ValidatorBreadcrumb";
 import { validatorNavigate } from "../../../store/slices/navigationSlice";
 import { setInsureTypeIndex } from "../../../store/slices/batchSlice";
@@ -106,8 +106,8 @@ const Field = ({ label, required, children }) => (
 
 // ── Reusable searchable dropdown ──────────────────────────────────────────────
 const SearchableSelect = ({ value, onChange, options, placeholder, dropRef }) => {
-    const [open, setOpen]       = useState(false);
-    const [search, setSearch]   = useState("");
+    const [open, setOpen]     = useState(false);
+    const [search, setSearch] = useState("");
 
     useEffect(() => {
         const handler = (e) => {
@@ -169,45 +169,46 @@ const SearchableSelect = ({ value, onChange, options, placeholder, dropRef }) =>
 };
 
 // ── Add Policy Panel ──────────────────────────────────────────────────────────
+const EMPTY_FORM = { checklistName: "", provider: "", state: "", location: "", description: "", active: true };
+
 const AddPolicyPanel = ({ open, onClose, onSave }) => {
     const dispatch = useDispatch();
-    const [checklistName, setChecklistName] = useState("");
-    const [provider,      setProvider]      = useState("");
-    const [state,         setState]         = useState("");
-    const [location,      setLocation]      = useState("");
-    const [description,   setDescription]   = useState("");
-    const [active,        setActive]        = useState(true);
+    const [form, setForm] = useState(EMPTY_FORM);
 
     const providerRef = useRef(null);
     const stateRef    = useRef(null);
     const locationRef = useRef(null);
 
-    useEffect(() => {
-        if (open) {
-            setChecklistName("");
-            setProvider("");
-            // setState("");
-            setLocation("");
-            setDescription("");
-            setActive(true);
-        }
-    }, [open]);
+    // ✅ Reset by passing initial state on open — no effect needed
+    const handleClose = () => {
+        setForm(EMPTY_FORM);
+        onClose();
+    };
 
-    const canSave = checklistName.trim() && provider.trim() && state && location.trim();
+    const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
+
+    const canSave = form.checklistName.trim() && form.provider.trim() && form.state && form.location.trim();
 
     const handleSave = () => {
         if (!canSave) return;
-        const payload = { name: checklistName, provider, state, location, description, is_active: active };
+        const payload = {
+            name: form.checklistName,
+            provider: form.provider,
+            state: form.state,
+            location: form.location,
+            description: form.description,
+            is_active: form.active,
+        };
         dispatch(setValidatorCreate(payload));
         createValidatorPolicy(payload);
         getValidatorSetupList(setValidatorSetupList, dispatch);
-        onSave({ checklistName, provider, state, location, description, active });
-        onClose();
+        onSave({ checklistName: form.checklistName });
+        handleClose();
     };
 
     return (
         <>
-            {open && <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />}
+            {open && <div className="fixed inset-0 z-40 bg-black/40" onClick={handleClose} />}
             <div className={`fixed top-0 right-0 z-50 h-full w-full max-w-md bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "translate-x-full"}`}>
 
                 {/* Header */}
@@ -216,7 +217,7 @@ const AddPolicyPanel = ({ open, onClose, onSave }) => {
                         <h2 className="text-[17px] font-bold text-gray-800">New AI Configuration Checklist</h2>
                         <p className="text-[12px] text-gray-400 mt-0.5">Define a new AI checklist for document validation.</p>
                     </div>
-                    <button onClick={onClose} className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors">
+                    <button onClick={handleClose} className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors">
                         <X size={14} />
                     </button>
                 </div>
@@ -224,75 +225,69 @@ const AddPolicyPanel = ({ open, onClose, onSave }) => {
                 {/* Body */}
                 <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-3">
 
-                    {/* Checklist Name */}
                     <Field label="Checklist Name" required>
                         <input
-                            value={checklistName}
-                            onChange={(e) => setChecklistName(e.target.value)}
+                            value={form.checklistName}
+                            onChange={(e) => set("checklistName")(e.target.value)}
                             placeholder="e.g. Auto Insurance New Policy Checklist"
                             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] text-gray-700 bg-gray-50 outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-300"
                         />
                     </Field>
 
-                    {/* Provider */}
                     <Field label="Provider" required>
                         <SearchableSelect
-                            value={provider}
-                            onChange={setProvider}
+                            value={form.provider}
+                            onChange={set("provider")}
                             options={PROVIDERS}
                             placeholder="Select Provider..."
                             dropRef={providerRef}
                         />
                     </Field>
 
-                    {/* State */}
                     <Field label="State" required>
                         <SearchableSelect
-                            value={state}
-                            onChange={setState}
+                            value={form.state}
+                            onChange={set("state")}
                             options={US_STATES}
                             placeholder="Select State..."
                             dropRef={stateRef}
                         />
                     </Field>
 
-                    {/* Location */}
                     <Field label="Location" required>
                         <SearchableSelect
-                            value={location}
-                            onChange={setLocation}
+                            value={form.location}
+                            onChange={set("location")}
                             options={LOCATIONS}
                             placeholder="Select Location..."
                             dropRef={locationRef}
                         />
                     </Field>
 
-                    {/* Description */}
                     <Field label="Description">
                         <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
+                            value={form.description}
+                            onChange={(e) => set("description")(e.target.value)}
                             rows={4}
                             placeholder="Describe the purpose of this AI configuration checklist..."
                             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] text-gray-700 resize-none outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-300"
                         />
                     </Field>
 
-                    {/* Status */}
                     <Field label="Status" required>
                         <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 bg-gray-50">
                             <div>
                                 <p className="text-[13px] font-semibold text-gray-700">Active</p>
                                 <p className="text-[11px] text-gray-400 mt-0.5">Checklist will be immediately visible and selectable.</p>
                             </div>
-                            <Toggle checked={active} onChange={() => setActive((a) => !a)} />
+                            <Toggle checked={form.active} onChange={() => set("active")(!form.active)} />
                         </div>
                     </Field>
                 </div>
 
                 {/* Footer */}
                 <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-white">
-                    <button onClick={onClose}
+                    <button onClick={handleClose}
                         className="text-[13px] font-semibold text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 px-5 py-2 rounded-lg transition-all">
                         Cancel
                     </button>
@@ -313,7 +308,9 @@ const AddPolicyPanel = ({ open, onClose, onSave }) => {
 const ValidatorSetup = () => {
     const dispatch = useDispatch();
     const { validatorlist } = useSelector((state) => state.validatorSetup);
-    const cards = validatorlist || [];
+
+    // ✅ Memoized so the reference is stable across renders
+    const cards = useMemo(() => validatorlist || [], [validatorlist]);
 
     const [loading,     setLoading]     = useState(true);
     const [panelOpen,   setPanelOpen]   = useState(false);
@@ -367,7 +364,7 @@ const ValidatorSetup = () => {
                 showToast("error", response?.data?.message || "Deploy failed. Please try again.");
             }
         } catch (err) {
-            showToast("error", "Something went wrong. Please try again.",err);
+            showToast("error", "Something went wrong. Please try again.", err);
         } finally {
             setDeployingId(null);
         }

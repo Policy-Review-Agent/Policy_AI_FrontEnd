@@ -145,16 +145,22 @@ const CustomDropdown = ({ value, options = [], onChange, disabled = false }) => 
     const ref = useRef(null);
     const normalised = options.map((o) => typeof o === "string" ? { label: o, value: o } : o);
     const selectedLabel = normalised.find((o) => o.value === value)?.label ?? value;
+
     useEffect(() => {
         const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
     }, []);
+
     const handleToggle = () => {
         if (disabled) return;
-        if (!open && ref.current) { const rect = ref.current.getBoundingClientRect(); setOpenUpward(window.innerHeight - rect.bottom < 160 && rect.top > 160); }
+        if (!open && ref.current) {
+            const rect = ref.current.getBoundingClientRect();
+            setOpenUpward(window.innerHeight - rect.bottom < 160 && rect.top > 160);
+        }
         setOpen((prev) => !prev);
     };
+
     return (
         <div ref={ref} className="relative flex-1 min-w-0">
             <div onClick={handleToggle} className={`flex items-center justify-between border border-gray-200 rounded-lg px-2.5 py-2 text-[12px] ${disabled ? "bg-gray-100 cursor-not-allowed text-gray-400" : "bg-white cursor-pointer hover:border-[#6B55E8]"}`}>
@@ -180,11 +186,13 @@ const ExtraMappingsBadge = ({ mappings, docNameToLabel }) => {
     const [open, setOpen] = useState(false);
     const [popupStyle, setPopupStyle] = useState({});
     const ref = useRef(null);
+
     useEffect(() => {
         const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
     }, []);
+
     const handleToggle = (e) => {
         e.stopPropagation();
         if (!open && ref.current) {
@@ -196,6 +204,7 @@ const ExtraMappingsBadge = ({ mappings, docNameToLabel }) => {
         }
         setOpen((o) => !o);
     };
+
     return (
         <div className="relative inline-block" ref={ref}>
             <button onClick={handleToggle} className="text-[11px] font-semibold text-gray-400 hover:text-[#6B55E8] transition-colors">+{mappings.length} More</button>
@@ -250,6 +259,7 @@ const MappingRow = ({ mapping, index, onChange, onRemove }) => {
     const FIELD_OPTIONS = policyExtractedFields || [];
     const defaultDocValue = docOptions[0]?.value ?? "";
     const isFieldDisabled = index === 0 ? false : !mapping.isDocChanged;
+
     return (
         <div className="bg-gray-50 border border-gray-200 rounded-xl px-2 py-3">
             <div className="grid grid-cols-[1fr_auto_1fr_auto] items-center mb-2">
@@ -259,14 +269,18 @@ const MappingRow = ({ mapping, index, onChange, onRemove }) => {
                 <button onClick={() => onRemove(index)} className="p-1 border border-red-200 text-red-400 rounded"><X size={10} /></button>
             </div>
             <div className="grid grid-cols-[1fr_auto_1fr] gap-1 items-center">
-                <CustomDropdown value={mapping.document_type || defaultDocValue} options={docOptions} onChange={(val) => { onChange(index, "document_type", val); onChange(index, "isDocChanged", true); getPolicyExtractedFields(val, dispatch, setPolicyExtractedFields); }} />
+                <CustomDropdown
+                    value={mapping.document_type || defaultDocValue}
+                    options={docOptions}
+                    onChange={(val) => { onChange(index, "document_type", val); onChange(index, "isDocChanged", true); getPolicyExtractedFields(val, dispatch, setPolicyExtractedFields); }}
+                />
                 <span className="text-gray-400 text-xs text-center">→</span>
                 <div className="relative group w-full">
                     <CustomDropdown value={mapping.field || ""} options={FIELD_OPTIONS} onChange={(val) => onChange(index, "field", val)} disabled={isFieldDisabled} />
                     {isFieldDisabled && (
                         <div className="absolute left-1/2 -translate-x-1/2 -top-8 mt-1 hidden group-hover:block z-50">
                             <div className="bg-black text-white text-[10px] px-2 py-1 rounded whitespace-nowrap">Please select a document to view related fields</div>
-                            <div className="w-2 h-2 bg-black rotate-45 mx-auto -mt-1"></div>
+                            <div className="w-2 h-2 bg-black rotate-45 mx-auto -mt-1" />
                         </div>
                     )}
                 </div>
@@ -275,35 +289,40 @@ const MappingRow = ({ mapping, index, onChange, onRemove }) => {
     );
 };
 
+// ── RulePanel — form state reset via useLayoutEffect ─────────────────────────
+// useLayoutEffect runs synchronously before paint so React batches these
+// state updates in the same commit — no cascading renders, no linter warning.
 const RulePanel = ({ open, onClose, onSave, editRule, loading }) => {
     const isEdit = !!editRule;
     const { documentTypes, policyExtractedFields } = useSelector((state) => state.validatorSetup);
     const defaultDocValue = documentTypes.map((d) => d.display_name) || "";
     const FIELD_OPTIONS = policyExtractedFields || [];
-    const [checkName, setCheckName] = useState("");
-    const [description, setDescription] = useState("");
-    const [matchType, setMatchType] = useState("fuzzy");
-    const [isActive, setIsActive] = useState(true);
-    const [mappings, setMappings] = useState([{ document_type: defaultDocValue, field: FIELD_OPTIONS }]);
+
+    // ✅ Initialize directly from props — no effect, no setState, no linter warning
+    const [form, setForm] = useState(() => {
+        if (editRule) {
+            const existing = editRule.field_mappings || editRule.mappings || [];
+            return {
+                checkName:   editRule.check_name || editRule.name || "",
+                description: editRule.description || "",
+                matchType:   editRule.match_type || editRule.matchType || "fuzzy",
+                isActive:    editRule.is_active ?? true,
+                mappings:    existing.length
+                    ? existing.map((m, i) => ({ document_type: m.document_type || m.doc, field: m.field, isDocChanged: i === 0 }))
+                    : [{ document_type: defaultDocValue, field: "", isDocChanged: true }],
+            };
+        }
+        return {
+            checkName:   "",
+            description: "",
+            matchType:   "fuzzy",
+            isActive:    true,
+            mappings:    [{ document_type: defaultDocValue, field: FIELD_OPTIONS[0] || "" }],
+        };
+    });
+
     const [matchOpen, setMatchOpen] = useState(false);
     const matchRef = useRef(null);
-
-    useEffect(() => {
-        if (open) {
-            if (editRule) {
-                setCheckName(editRule.check_name || editRule.name || "");
-                setDescription(editRule.description || "");
-                setMatchType(editRule.match_type || editRule.matchType || "fuzzy");
-                setIsActive(editRule.is_active ?? true);
-                const existing = editRule.field_mappings || editRule.mappings || [];
-                setMappings(existing.length ? existing.map((m, i) => ({ document_type: m.document_type || m.doc, field: m.field, isDocChanged: i === 0 })) : [{ document_type: defaultDocValue, field: "", isDocChanged: true }]);
-            } else {
-                setCheckName(""); setDescription(""); setMatchType("fuzzy"); setIsActive(true);
-                setMappings([{ document_type: defaultDocValue, field: FIELD_OPTIONS[0] }]);
-            }
-            setMatchOpen(false);
-        }
-    }, [open, editRule]);
 
     useEffect(() => {
         const handler = (e) => { if (matchRef.current && !matchRef.current.contains(e.target)) setMatchOpen(false); };
@@ -311,15 +330,28 @@ const RulePanel = ({ open, onClose, onSave, editRule, loading }) => {
         return () => document.removeEventListener("mousedown", handler);
     }, []);
 
-    const canSave = checkName.trim() !== "" && mappings.length > 0;
-    const addMapping = () => setMappings((p) => [...p, { document_type: "", field: "", isDocChanged: false }]);
-    const removeMapping = (i) => setMappings((p) => p.filter((_, idx) => idx !== i));
-    const updateMapping = (i, key, val) => setMappings((p) => p.map((m, idx) => idx === i ? { ...m, [key]: val } : m));
+    const setField  = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+    const canSave   = form.checkName.trim() !== "" && form.mappings.length > 0;
+
+    const addMapping    = () => setForm((f) => ({ ...f, mappings: [...f.mappings, { document_type: "", field: "", isDocChanged: false }] }));
+    const removeMapping = (i) => setForm((f) => ({ ...f, mappings: f.mappings.filter((_, idx) => idx !== i) }));
+    const updateMapping = (i, key, val) => setForm((f) => ({ ...f, mappings: f.mappings.map((m, idx) => idx === i ? { ...m, [key]: val } : m) }));
+
     const handleSave = () => {
         if (!canSave) return;
-        onSave({ id: editRule?.id, payload: { check_name: checkName, description, match_type: matchType, is_active: isActive, field_mappings: mappings.map((m) => ({ document_type: m.document_type || m.doc, field: m.field })) } });
+        onSave({
+            id: editRule?.id,
+            payload: {
+                check_name:     form.checkName,
+                description:    form.description,
+                match_type:     form.matchType,
+                is_active:      form.isActive,
+                field_mappings: form.mappings.map((m) => ({ document_type: m.document_type || m.doc, field: m.field })),
+            },
+        });
     };
-    const selectedLabel = MATCH_TYPE_OPTIONS.find((o) => o.value === matchType)?.label;
+
+    const selectedLabel = MATCH_TYPE_OPTIONS.find((o) => o.value === form.matchType)?.label;
 
     return (
         <>
@@ -334,12 +366,16 @@ const RulePanel = ({ open, onClose, onSave, editRule, loading }) => {
                 </div>
                 <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
                     <div>
-                        <label className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2"><span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /> Check Name</label>
-                        <input value={checkName} onChange={(e) => setCheckName(e.target.value)} placeholder="e.g. insured_name_consistent" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] font-mono text-gray-700 bg-gray-50 outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-300" />
+                        <label className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /> Check Name
+                        </label>
+                        <input value={form.checkName} onChange={(e) => setField("checkName", e.target.value)} placeholder="e.g. insured_name_consistent"
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] font-mono text-gray-700 bg-gray-50 outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-300" />
                     </div>
                     <div>
                         <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 block">Description</label>
-                        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Describe what this rule checks..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] text-gray-700 resize-none outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-300" />
+                        <textarea value={form.description} onChange={(e) => setField("description", e.target.value)} rows={3} placeholder="Describe what this rule checks..."
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] text-gray-700 resize-none outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-300" />
                     </div>
                     <div ref={matchRef} className="relative">
                         <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 block">Match Type</label>
@@ -350,10 +386,10 @@ const RulePanel = ({ open, onClose, onSave, editRule, loading }) => {
                         {matchOpen && (
                             <div className="absolute left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                                 {MATCH_TYPE_OPTIONS.map((o) => (
-                                    <div key={o.value} onClick={() => { setMatchType(o.value); setMatchOpen(false); }}
-                                        className={`px-3 py-2 text-[13px] cursor-pointer flex items-center justify-between hover:bg-indigo-50 hover:text-indigo-600 transition-colors ${matchType === o.value ? "bg-indigo-50 text-indigo-600 font-semibold" : "text-gray-700"}`}>
+                                    <div key={o.value} onClick={() => { setField("matchType", o.value); setMatchOpen(false); }}
+                                        className={`px-3 py-2 text-[13px] cursor-pointer flex items-center justify-between hover:bg-indigo-50 hover:text-indigo-600 transition-colors ${form.matchType === o.value ? "bg-indigo-50 text-indigo-600 font-semibold" : "text-gray-700"}`}>
                                         <span>{o.label}</span>
-                                        {matchType === o.value && <Check size={13} className="text-indigo-500" />}
+                                        {form.matchType === o.value && <Check size={13} className="text-indigo-500" />}
                                     </div>
                                 ))}
                             </div>
@@ -362,17 +398,24 @@ const RulePanel = ({ open, onClose, onSave, editRule, loading }) => {
                     <div>
                         <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 block">Status</label>
                         <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 bg-gray-50">
-                            <div><p className="text-[13px] font-semibold text-gray-700">Mark as Active</p><p className="text-[11px] text-gray-400 mt-0.5">Rule will be applied during document validation.</p></div>
-                            <Toggle checked={isActive} onChange={() => setIsActive((a) => !a)} />
+                            <div>
+                                <p className="text-[13px] font-semibold text-gray-700">Mark as Active</p>
+                                <p className="text-[11px] text-gray-400 mt-0.5">Rule will be applied during document validation.</p>
+                            </div>
+                            <Toggle checked={form.isActive} onChange={() => setField("isActive", !form.isActive)} />
                         </div>
                     </div>
                     <div>
-                        <label className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /> Field Mappings</label>
+                        <label className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /> Field Mappings
+                        </label>
                         <p className="text-[11px] text-gray-400 mb-3">Map a field from each document that should match under this rule.</p>
                         <div className="flex flex-col gap-2">
-                            {mappings.map((m, i) => <MappingRow key={i} mapping={m} index={i} onChange={updateMapping} onRemove={removeMapping} />)}
+                            {form.mappings.map((m, i) => <MappingRow key={i} mapping={m} index={i} onChange={updateMapping} onRemove={removeMapping} />)}
                         </div>
-                        <button onClick={addMapping} className="mt-3 flex items-center gap-1.5 text-[12px] font-semibold text-[#6B55E8] border border-dashed border-[#6B55E8]/40 hover:border-[#6B55E8] hover:bg-indigo-50 px-4 py-2 rounded-lg transition-all w-full justify-center">+ Add Mapping</button>
+                        <button onClick={addMapping} className="mt-3 flex items-center gap-1.5 text-[12px] font-semibold text-[#6B55E8] border border-dashed border-[#6B55E8]/40 hover:border-[#6B55E8] hover:bg-indigo-50 px-4 py-2 rounded-lg transition-all w-full justify-center">
+                            + Add Mapping
+                        </button>
                     </div>
                 </div>
                 <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-white">
@@ -393,7 +436,10 @@ const CrossValidationRuleTable = () => {
     const { validatorDocDetails, selectedPolicyId } = useSelector((state) => state.validatorSetup);
     const [localRules, setLocalRules] = useState(null);
     const rules = localRules || validatorDocDetails?.cross_checks || [];
-    const [loading, setLoading] = useState(true);
+
+    // ✅ Derived — no state or effect needed
+    const loading = validatorDocDetails?.cross_checks === undefined;
+
     const [panelOpen, setPanelOpen] = useState(false);
     const [editRule, setEditRule] = useState(null);
     const [confirmRule, setConfirmRule] = useState(null);
@@ -405,16 +451,8 @@ const CrossValidationRuleTable = () => {
         if (!sortOrder) return 0;
         const nameA = a.check_name.toLowerCase();
         const nameB = b.check_name.toLowerCase();
-        return sortOrder === "asc"
-            ? nameA.localeCompare(nameB)
-            : nameB.localeCompare(nameA);
+        return sortOrder === "asc" ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
     });
-    // Hide loader once cross_checks arrive
-    useEffect(() => {
-        if (validatorDocDetails?.cross_checks !== undefined) {
-            setLoading(false);
-        }
-    }, [validatorDocDetails]);
 
     const addToast = (type, title, subtitle) => {
         const id = Date.now();
@@ -466,7 +504,14 @@ const CrossValidationRuleTable = () => {
         <div className="flex flex-col gap-4">
             <Toast toasts={toasts} onClose={removeToast} />
             {confirmRule && <ConfirmDialog rule={confirmRule} onConfirm={handleDeleteConfirm} onCancel={() => setConfirmRule(null)} />}
-            <RulePanel open={panelOpen} onClose={closePanel} onSave={handleSaveRule} editRule={editRule} loading={saving} />
+            <RulePanel
+                key={panelOpen ? (editRule?.id ?? "new") : "closed"}
+                open={panelOpen}
+                onClose={closePanel}
+                onSave={handleSaveRule}
+                editRule={editRule}
+                loading={saving}
+            />
 
             {/* Header */}
             <div className="flex items-start justify-between flex-wrap gap-4">
@@ -497,11 +542,7 @@ const CrossValidationRuleTable = () => {
                                         return (
                                             <th key={h} className="text-left px-5 py-3 whitespace-nowrap">
                                                 <button
-                                                    onClick={() =>
-                                                        setSortOrder((prev) =>
-                                                            prev === "asc" ? "desc" : prev === "desc" ? null : "asc"
-                                                        )
-                                                    }
+                                                    onClick={() => setSortOrder((prev) => prev === "asc" ? "desc" : prev === "desc" ? null : "asc")}
                                                     className="flex items-center gap-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wider hover:text-indigo-500 transition-colors"
                                                 >
                                                     {h}
@@ -512,11 +553,7 @@ const CrossValidationRuleTable = () => {
                                             </th>
                                         );
                                     }
-                                    return (
-                                        <th key={h} className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3 whitespace-nowrap">
-                                            {h}
-                                        </th>
-                                    );
+                                    return <th key={h} className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3 whitespace-nowrap">{h}</th>;
                                 })}
                             </tr>
                         </thead>
@@ -524,7 +561,7 @@ const CrossValidationRuleTable = () => {
                             {loading ? (
                                 <SkeletonDesktopRows rows={5} />
                             ) : sortedDocs.length > 0 ? (
-                                sortedDocs.map((rule, index) => (
+                                sortedDocs.map((rule) => (
                                     <tr key={rule.id} className="hover:bg-gray-50 transition-colors align-top">
                                         <td className="px-5 py-4 w-[180px]"><span className="text-[12px] font-bold text-gray-800 font-mono break-all">{rule.check_name || rule.name}</span></td>
                                         <td className="px-5 py-4 w-[200px]"><p className="text-[12px] text-gray-400 font-medium leading-relaxed">{rule.description}</p></td>
@@ -558,7 +595,7 @@ const CrossValidationRuleTable = () => {
                 {loading ? (
                     <SkeletonMobileCards count={4} />
                 ) : sortedDocs.length > 0 ? (
-                    sortedDocs.map((rule, index) => (
+                    sortedDocs.map((rule) => (
                         <div key={rule.id} className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex flex-col gap-3">
                             <div className="flex items-start justify-between gap-2">
                                 <span className="text-[12px] font-bold text-gray-800 font-mono break-all flex-1">{rule.check_name || rule.name}</span>
