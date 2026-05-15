@@ -9,23 +9,17 @@ import Pagination from "../Pagination/Pagination";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const STATS_CONFIG = [
-    { key: "total_batches", label: "Total Batches", sub: "All time", Icon: Layers, color: "bg-blue-50 text-blue-600" },
-    { key: "in_progress", label: "In Progress", sub: "Being processed", Icon: Clock, color: "bg-amber-50 text-amber-500" },
-    { key: "completed", label: "Completed", sub: "All policies done", Icon: CheckCircle, color: "bg-green-50 text-green-500" },
-    { key: "needs_attention", label: "Needs Attention", sub: "Issues found", Icon: AlertCircle, color: "bg-red-50 text-red-500" },
+    { key: "total_batches", label: "Total Batches", sub: "All time", icon: Layers, color: "bg-blue-50 text-blue-600" },
+    { key: "in_progress", label: "In Progress", sub: "Being processed", icon: Clock, color: "bg-amber-50 text-amber-500" },
+    { key: "completed", label: "Completed", sub: "All policies done", icon: CheckCircle, color: "bg-green-50 text-green-500" },
+    { key: "needs_attention", label: "Needs Attention", sub: "Issues found", icon: AlertCircle, color: "bg-red-50 text-red-500" },
 ];
 
 const TABLE_HEADS = ["Batch ID", "Batch Date", "Total", "Ready For Review", "Reviewed", "Status", "Action"];
-// const TABLE_HEADS = ["Batch ID", "Batch Date", "Total", "Processed", "Pending", "Status", "Action"];
 
 const SORT_KEYS = {
-    // "Batch ID":   "batch_number",
     "Batch Date": "batch_date",
     "Total": "total_policies",
-    // "Processed":  "processed",
-    // "Pending":    "pending",
-    // "Status":     "status",
-    // // "Action" — not sortable
 };
 
 // ─── Skeleton Loaders ─────────────────────────────────────────────────────────
@@ -87,6 +81,7 @@ const Dashboard = () => {
                 getDashboardList(setDashboardList, dispatch),
             ]);
             setLoading(false);
+            setCurrentPage(1);
         };
         fetchDashboardData();
 
@@ -98,15 +93,10 @@ const Dashboard = () => {
         return () => clearInterval(intervalId);
     }, [dispatch]);
 
-    // ── Reset page on list change ──
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [dashboardList.length]);
-
     // ── Sort handler ──
     const handleSort = (field) => {
         if (sortField === field) {
-            setSortDir((d) => d === "asc" ? "desc" : "asc");
+            setSortDir((d) => (d === "asc" ? "desc" : "asc"));
         } else {
             setSortField(field);
             setSortDir("asc");
@@ -143,11 +133,12 @@ const Dashboard = () => {
 
     // ── Compute per-date serial numbers ──
     const paginatedListWithSerial = paginatedList.map((batch) => {
-        const batchDateOnly = batch.batch_date?.slice(0, 10); // "2026-05-09"
+        const batchDateOnly = batch.batch_date?.slice(0, 10);
         const sameDate = sortedData.filter((b) => b.batch_date?.slice(0, 10) === batchDateOnly);
         const serial = sameDate.findIndex((b) => b.batch_id === batch.batch_id) + 1;
         return { ...batch, serial };
     });
+
     return (
         <div>
             <Breadcrumb crumbs={[{ label: "Dashboard" }]} />
@@ -167,19 +158,23 @@ const Dashboard = () => {
                 <div className="grid grid-cols-4 gap-4 sm:min-w-[700px] min-w-[800px]">
                     {loading
                         ? Array.from({ length: 4 }).map((_, i) => <SkeletonStatCard key={i} />)
-                        : STATS_CONFIG.map(({ key, label, Icon, color }) => (
-                            <div key={key}
-                                className="flex justify-start items-center gap-5 bg-white border border-gray-200 rounded-xl ps-5 py-4 shadow-sm hover:shadow-lg transition-shadow cursor-pointer pe-0.5"
-                            >
-                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${color}`}>
-                                    <Icon size={16} />
+                        : STATS_CONFIG.map(({ key, label, icon, color }) => {
+                            const Icon = icon;
+                            return (
+                                <div
+                                    key={key}
+                                    className="flex justify-start items-center gap-5 bg-white border border-gray-200 rounded-xl ps-5 py-4 shadow-sm hover:shadow-lg transition-shadow cursor-pointer pe-0.5"
+                                >
+                                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${color}`}>
+                                        <Icon size={16} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-medium text-gray-600 truncate">{label}</p>
+                                        <p className="text-[22px] font-bold text-gray-800 leading-none mt-1">{stats[key]}</p>
+                                    </div>
                                 </div>
-                                <div className="min-w-0">
-                                    <p className="text-xs font-medium text-gray-600 truncate">{label}</p>
-                                    <p className="text-[22px] font-bold text-gray-800 leading-none mt-1">{stats[key]}</p>
-                                </div>
-                            </div>
-                        ))
+                            );
+                        })
                     }
                 </div>
             </div>
@@ -210,8 +205,8 @@ const Dashboard = () => {
                                             key={h}
                                             onClick={() => isSortable && handleSort(h)}
                                             className={`text-[11px] font-semibold uppercase tracking-wider px-3 py-2.5 border-b border-gray-100 whitespace-nowrap select-none transition-colors ${isSortable
-                                                ? "cursor-pointer hover:bg-gray-100 hover:text-gray-600"
-                                                : "cursor-default"
+                                                    ? "cursor-pointer hover:bg-gray-100 hover:text-gray-600"
+                                                    : "cursor-default"
                                                 } ${sortField === h ? "text-indigo-500" : "text-gray-800"}`}
                                         >
                                             {h}

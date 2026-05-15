@@ -72,7 +72,7 @@ const UploadFile = () => {
                 showToast("error", errMsg);
             }
         } catch (err) {
-            showToast("error", "Something went wrong. Please try again.");
+            showToast("error", "Something went wrong. Please try again.",err);
         } finally {
             setUploading(false);
         }

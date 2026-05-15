@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
     setValDocIdx,
@@ -7,7 +7,7 @@ import {
     setSelectedDocViewerIdx,
 } from "../../../store/slices/validationSlice";
 import { navigate } from "../../../store/slices/navigationSlice";
-import { selectCurrentPolicy, selectPolicy } from "../../../store/slices/batchSlice";
+import { selectPolicy } from "../../../store/slices/batchSlice";
 import { showToast } from "../../../store/slices/toastSlice";
 import { selectCurrentPolicies } from "../../../store/slices/batchSlice";
 import {
@@ -110,21 +110,12 @@ const SkeletonBody = () => (
 
 const Validation = () => {
     const dispatch = useDispatch();
-    const policy = useSelector(selectCurrentPolicy);
     const policies = useSelector(selectCurrentPolicies);
     const polIdx = useSelector((s) => s.batch.selectedPolicyIdx);
     const { docs, curDocIdx, zoom } = useSelector((s) => s.validation);
 
-    const [loading, setLoading] = useState(true);
-
-    // Show loader until docs are available
-    useEffect(() => {
-        if (docs && docs.length > 0) {
-            setLoading(false);
-        } else {
-            setLoading(true);
-        }
-    }, [docs]);
+    // ✅ Derived state — no useState/useEffect needed
+    const loading = !docs || docs.length === 0;
 
     const doc = docs?.[curDocIdx];
     const mockDocHTML = [];
@@ -231,8 +222,8 @@ const Validation = () => {
                                         key={i}
                                         onClick={() => switchDoc(i)}
                                         className={`flex items-center gap-1.5 px-4 py-3 text-[13px] font-medium whitespace-nowrap border-b-2 -mb-px transition-all ${i === curDocIdx
-                                                ? "text-primary border-primary font-semibold"
-                                                : "text-gray-400 border-transparent hover:text-gray-700"
+                                            ? "text-primary border-primary font-semibold"
+                                            : "text-gray-400 border-transparent hover:text-gray-700"
                                             }`}
                                     >
                                         <span className={`w-2 h-2 rounded-full ${dot}`} />
@@ -297,7 +288,6 @@ const Validation = () => {
                                 </div>
                                 <div className="flex-1 p-3 overflow-y-auto max-h-[420px] flex flex-col gap-2.5">
                                     {doc.fields.map((f, i) => (
-                                      
                                         <ValidationField key={i} field={f} idx={i} />
                                     ))}
                                 </div>

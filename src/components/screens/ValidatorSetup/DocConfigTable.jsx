@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setValidatorDocDetails, setPolicyExtractedFields } from "../../../store/slices/validatorSetupSlice";
 import { createValidatorDocDetails, getValidatorDocDetails, deleteValidatorDocDetails, updateValidatorDocDetails, getPolicyExtractedFields } from "../../api/validatorApiCall";
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+
 const MAX_VISIBLE_FIELDS = 2;
 
 // ── Skeleton rows (desktop) ───────────────────────────────────────────────────
@@ -132,11 +133,13 @@ const ExtraFieldsBadge = ({ fields }) => {
     const [popupStyle, setPopupStyle] = useState({});
     const ref = useRef(null);
     const popRef = useRef(null);
+
     useEffect(() => {
         const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
     }, []);
+
     const handleToggle = (e) => {
         e.stopPropagation();
         if (!open && ref.current) {
@@ -152,6 +155,7 @@ const ExtraFieldsBadge = ({ fields }) => {
         }
         setOpen((o) => !o);
     };
+
     return (
         <div className="relative" ref={ref}>
             <button onClick={handleToggle} className="text-[11px] font-semibold text-gray-400 hover:text-[#6B55E8] transition-colors">
@@ -252,7 +256,7 @@ const ExtractFieldsInput = ({ fields, onChange }) => {
 };
 
 const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
-    const { selectedPolicyId, documentTypes, policyExtractedFields } = useSelector((state) => state.validatorSetup);
+    const { selectedPolicyId, documentTypes } = useSelector((state) => state.validatorSetup);
     const dispatch = useDispatch();
     const isEdit = !!editDoc;
     const [docType, setDocType] = useState("");
@@ -287,14 +291,11 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
     const canSave = docType.trim() !== "" && fields.length > 0;
     const filteredDocs = documentTypes?.filter((d) => d.display_name.toLowerCase().includes(docSearch.toLowerCase())) || [];
 
-
     const handleSave = async () => {
         if (!canSave) return;
         try {
             setLoading(true);
-            const formattedType = docType
-                .toLowerCase()
-                .replace(/\s+/g, "_");
+            const formattedType = docType.toLowerCase().replace(/\s+/g, "_");
             const payload = { document_type: formattedType, display_name: docType, required, description, extract_fields: fields };
             if (isEdit && editDoc?.id) {
                 await updateValidatorDocDetails(editDoc.id, payload);
@@ -393,32 +394,25 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
 
 // ── Main component ────────────────────────────────────────────────────────────
 const DocConfigTable = () => {
-    const { validatorDocDetails, selectedPolicyId, documentTypes } = useSelector((state) => state.validatorSetup);
+    const { validatorDocDetails, selectedPolicyId } = useSelector((state) => state.validatorSetup);
     const dispatch = useDispatch();
     const [localDocs, setLocalDocs] = useState(null);
     const docs = localDocs || validatorDocDetails?.documents || [];
-    const [loading, setLoading] = useState(true);
     const [panelOpen, setPanelOpen] = useState(false);
     const [editDoc, setEditDoc] = useState(null);
     const [confirmDoc, setConfirmDoc] = useState(null);
     const [toasts, setToasts] = useState([]);
     const [sortOrder, setSortOrder] = useState(null);
 
+    // ✅ Derived — no state or effect needed
+    const loading = validatorDocDetails?.documents === undefined;
+
     const sortedDocs = [...docs].sort((a, b) => {
         if (!sortOrder) return 0;
         const nameA = a.display_name.toLowerCase();
         const nameB = b.display_name.toLowerCase();
-        return sortOrder === "asc"
-            ? nameA.localeCompare(nameB)
-            : nameB.localeCompare(nameA);
+        return sortOrder === "asc" ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
     });
-
-    // Hide loader once documents arrive
-    useEffect(() => {
-        if (validatorDocDetails?.documents !== undefined) {
-            setLoading(false);
-        }
-    }, [validatorDocDetails]);
 
     const addToast = (type, title, subtitle) => {
         const id = Date.now();
@@ -497,29 +491,22 @@ const DocConfigTable = () => {
             {/* ── DESKTOP table ── */}
             <div className="hidden md:block bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                 <div className="grid grid-cols-[50px_220px_120px_1fr_80px_100px] gap-4 px-5 py-2.5 bg-gray-50 border-b border-gray-100">
-                    {/* Replace just this one header cell in your .map() */}
                     {["#", "DOCUMENT TYPE", "STATUS", "EXTRACT FIELDS", "FIELDS", "ACTIONS"].map((h) => {
                         if (h === "DOCUMENT TYPE") {
                             return (
                                 <button
                                     key={h}
-                                    onClick={() =>
-                                        setSortOrder((prev) =>
-                                            prev === "asc" ? "desc" : prev === "desc" ? null : "asc"
-                                        )
-                                    }
+                                    onClick={() => setSortOrder((prev) => prev === "asc" ? "desc" : prev === "desc" ? null : "asc")}
                                     className="flex items-center gap-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wider hover:text-indigo-500 transition-colors"
                                 >
                                     {h}
-                                    {sortOrder === "asc" && <ArrowUp size={11} className="text-indigo-500" />}
+                                    {sortOrder === "asc"  && <ArrowUp   size={11} className="text-indigo-500" />}
                                     {sortOrder === "desc" && <ArrowDown size={11} className="text-indigo-500" />}
-                                    {!sortOrder && <ArrowUpDown size={11} className="text-gray-300" />}
+                                    {!sortOrder           && <ArrowUpDown size={11} className="text-gray-300" />}
                                 </button>
                             );
                         }
-                        return (
-                            <p key={h} className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{h}</p>
-                        );
+                        return <p key={h} className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{h}</p>;
                     })}
                 </div>
                 <div className="divide-y divide-gray-100">
@@ -528,7 +515,7 @@ const DocConfigTable = () => {
                     ) : sortedDocs.length > 0 ? (
                         sortedDocs.map((doc, index) => {
                             const visibleFields = (doc?.extract_fields || []).slice(0, MAX_VISIBLE_FIELDS);
-                            const hiddenFields = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
+                            const hiddenFields  = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
                             return (
                                 <div key={index} className="grid grid-cols-[50px_220px_120px_1fr_80px_100px] gap-4 px-5 py-2.5 hover:bg-gray-50 transition-colors items-center">
                                     <div className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-semibold flex-shrink-0">{index + 1}</div>
@@ -562,7 +549,7 @@ const DocConfigTable = () => {
                 ) : sortedDocs.length > 0 ? (
                     sortedDocs.map((doc, index) => {
                         const visibleFields = (doc?.extract_fields || []).slice(0, MAX_VISIBLE_FIELDS);
-                        const hiddenFields = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
+                        const hiddenFields  = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
                         return (
                             <div key={index} className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex flex-col gap-3">
                                 <div className="flex items-start justify-between gap-2">
