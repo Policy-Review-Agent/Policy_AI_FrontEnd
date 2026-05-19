@@ -6,20 +6,21 @@ import { getDashboardStats, getDashboardList } from "../../api/apisCall";
 import { setDashboardStats, setDashboardList } from "../../../store/slices/batchSlice";
 import { useSelector, useDispatch } from "react-redux";
 import Pagination from "../Pagination/Pagination";
+import CustomDatePicker from "./CustomDatePicker";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const STATS_CONFIG = [
-    { key: "total_batches", label: "Total Batches", sub: "All time", icon: Layers, color: "bg-blue-50 text-blue-600" },
-    { key: "in_progress", label: "In Progress", sub: "Being processed", icon: Clock, color: "bg-amber-50 text-amber-500" },
-    { key: "completed", label: "Completed", sub: "All policies done", icon: CheckCircle, color: "bg-green-50 text-green-500" },
-    { key: "needs_attention", label: "Needs Attention", sub: "Issues found", icon: AlertCircle, color: "bg-red-50 text-red-500" },
+    { key: "total_batches",   label: "Total Batches",    sub: "All time",          icon: Layers,      color: "bg-blue-50 text-blue-600"   },
+    { key: "in_progress",     label: "In Progress",      sub: "Being processed",   icon: Clock,       color: "bg-amber-50 text-amber-500"  },
+    { key: "completed",       label: "Completed",        sub: "All policies done", icon: CheckCircle, color: "bg-green-50 text-green-500"  },
+    { key: "needs_attention", label: "Needs Attention",  sub: "Issues found",      icon: AlertCircle, color: "bg-red-50 text-red-500"      },
 ];
 
 const TABLE_HEADS = ["Batch ID", "Batch Date", "Total", "Ready For Review", "Reviewed", "Status", "Action"];
 
 const SORT_KEYS = {
     "Batch Date": "batch_date",
-    "Total": "total_policies",
+    "Total":      "total_policies",
 };
 
 // ─── Skeleton Loaders ─────────────────────────────────────────────────────────
@@ -49,7 +50,7 @@ const SkeletonStatCard = () => (
 const SortIcon = ({ field, sortField, sortDir }) => {
     if (sortField !== field) return <ArrowUpDown size={11} className="text-gray-500 ms-1 inline" />;
     return sortDir === "asc"
-        ? <ArrowUp size={11} className="text-indigo-500 ms-1 inline" />
+        ? <ArrowUp   size={11} className="text-indigo-500 ms-1 inline" />
         : <ArrowDown size={11} className="text-indigo-500 ms-1 inline" />;
 };
 
@@ -58,17 +59,21 @@ const Dashboard = () => {
     const dispatch = useDispatch();
     const { dashboardStats, dashboardList } = useSelector((s) => s.batch);
 
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading]         = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [sortField, setSortField] = useState(null);
-    const [sortDir, setSortDir] = useState("asc");
+    const [searchTerm, setSearchTerm]   = useState("");
+    const [sortField, setSortField]     = useState(null);
+    const [sortDir, setSortDir]         = useState("asc");
+
+    // Date range filter state
+    const [dateStart, setDateStart] = useState(null); // Date | null
+    const [dateEnd, setDateEnd]     = useState(null); // Date | null
 
     const stats = {
-        total_batches: dashboardStats?.total_batches || 0,
-        in_progress: dashboardStats?.in_progress || 0,
-        completed: dashboardStats?.completed || 0,
+        total_batches:   dashboardStats?.total_batches   || 0,
+        in_progress:     dashboardStats?.in_progress     || 0,
+        completed:       dashboardStats?.completed       || 0,
         needs_attention: dashboardStats?.needs_attention || 0,
     };
 
@@ -103,11 +108,47 @@ const Dashboard = () => {
         }
     };
 
+    // ── Date picker callbacks ──
+    const handleDateApply = (start, end) => {
+        setDateStart(start);
+        setDateEnd(end);
+        setCurrentPage(1);
+    };
+
+    const handleDateClear = () => {
+        setDateStart(null);
+        setDateEnd(null);
+        setCurrentPage(1);
+    };
+
     // ── Filter ──
-    const filteredData = dashboardList.filter((item) =>
-        item.status?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.batch_date?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredData = dashboardList.filter((item) => {
+        // Text search
+        const matchesSearch =
+            item.status?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.batch_date?.toLowerCase().includes(searchTerm.toLowerCase());
+        if (!matchesSearch) return false;
+
+        // Date range filter — batch_date is an ISO string e.g. "2026-05-18T09:48:05.357000"
+        if (dateStart || dateEnd) {
+            const batchDate = item.batch_date ? new Date(item.batch_date) : null;
+            if (!batchDate) return false;
+
+            // Normalise to start-of-day for comparison
+            const batchDay = new Date(batchDate.getFullYear(), batchDate.getMonth(), batchDate.getDate());
+
+            if (dateStart) {
+                const startDay = new Date(dateStart.getFullYear(), dateStart.getMonth(), dateStart.getDate());
+                if (batchDay < startDay) return false;
+            }
+            if (dateEnd) {
+                const endDay = new Date(dateEnd.getFullYear(), dateEnd.getMonth(), dateEnd.getDate());
+                if (batchDay > endDay) return false;
+            }
+        }
+
+        return true;
+    });
 
     // ── Sort ──
     const sortedData = [...filteredData].sort((a, b) => {
@@ -116,7 +157,7 @@ const Dashboard = () => {
         if (!key) return 0;
         const aVal = a[key] ?? "";
         const bVal = b[key] ?? "";
-        const cmp = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
+        const cmp  = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
         return sortDir === "asc" ? cmp : -cmp;
     });
 
@@ -134,8 +175,8 @@ const Dashboard = () => {
     // ── Compute per-date serial numbers ──
     const paginatedListWithSerial = paginatedList.map((batch) => {
         const batchDateOnly = batch.batch_date?.slice(0, 10);
-        const sameDate = sortedData.filter((b) => b.batch_date?.slice(0, 10) === batchDateOnly);
-        const serial = sameDate.findIndex((b) => b.batch_id === batch.batch_id) + 1;
+        const sameDate      = sortedData.filter((b) => b.batch_date?.slice(0, 10) === batchDateOnly);
+        const serial        = sameDate.findIndex((b) => b.batch_id === batch.batch_id) + 1;
         return { ...batch, serial };
     });
 
@@ -185,13 +226,36 @@ const Dashboard = () => {
                 {/* Table Header */}
                 <div className="flex justify-between items-center px-4 py-2.5 border-b border-gray-100">
                     <p className="text-[15px] font-semibold text-gray-800">Batch Queue</p>
-                    <input
-                        value={searchTerm}
-                        onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                        placeholder="Search"
-                        className="w-[20%] border border-gray-200 rounded-lg px-3 py-0.5 text-[13px] font-mono text-gray-700 bg-gray-50 outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-500"
-                    />
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        {/* Date range picker — passes callbacks into component */}
+                        <CustomDatePicker
+                            onApply={handleDateApply}
+                            onClear={handleDateClear}
+                        />
+
+                        {/* Search */}
+                        <input
+                            value={searchTerm}
+                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                            placeholder="Search"
+                            className="w-[160px] border border-gray-200 rounded-lg px-3 py-[5px] text-[12px] font-mono text-gray-700 bg-gray-50 outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-400"
+                        />
+                    </div>
                 </div>
+
+                {/* Active filter badge */}
+                {(dateStart || dateEnd) && (
+                    <div className="px-4 py-1.5 bg-indigo-50 border-b border-indigo-100 flex items-center gap-2">
+                        <span className="text-[11px] text-indigo-400 font-medium">Filtering by date:</span>
+                        <span className="text-[11px] text-indigo-600 font-semibold font-mono">
+                            {dateStart?.toLocaleDateString()} {dateEnd && dateEnd !== dateStart ? `→ ${dateEnd.toLocaleDateString()}` : ""}
+                        </span>
+                        <span className="text-[11px] text-indigo-400">
+                            ({sortedData.length} result{sortedData.length !== 1 ? "s" : ""})
+                        </span>
+                    </div>
+                )}
 
                 {/* Table */}
                 <div className="overflow-x-auto overflow-visible">
@@ -204,18 +268,15 @@ const Dashboard = () => {
                                         <th
                                             key={h}
                                             onClick={() => isSortable && handleSort(h)}
-                                            className={`text-[11px] font-semibold uppercase tracking-wider px-3 py-2.5 border-b border-gray-100 whitespace-nowrap select-none transition-colors ${isSortable
+                                            className={`text-[11px] font-semibold uppercase tracking-wider px-3 py-2.5 border-b border-gray-100 whitespace-nowrap select-none transition-colors ${
+                                                isSortable
                                                     ? "cursor-pointer hover:bg-gray-100 hover:text-gray-600"
                                                     : "cursor-default"
-                                                } ${sortField === h ? "text-indigo-500" : "text-gray-800"}`}
+                                            } ${sortField === h ? "text-indigo-500" : "text-gray-800"}`}
                                         >
                                             {h}
                                             {isSortable && (
-                                                <SortIcon
-                                                    field={h}
-                                                    sortField={sortField}
-                                                    sortDir={sortDir}
-                                                />
+                                                <SortIcon field={h} sortField={sortField} sortDir={sortDir} />
                                             )}
                                         </th>
                                     );

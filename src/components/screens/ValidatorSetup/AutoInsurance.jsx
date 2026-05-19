@@ -92,7 +92,7 @@ const AutoInsurance = () => {
 
     const selectedData = validatorlist?.[insureTypeIndex] || validatorlist?.[0];
     if (!selectedData) return null;
-
+console.log("selectedData",selectedData)
     return (
         <div className="min-w-0 w-full">
             <ValidatorBreadcrumb
@@ -128,7 +128,7 @@ const AutoInsurance = () => {
                                     {selectedData.is_active ? "Active" : "Inactive"}
                                 </span>
                                 <span className="bg-gray-100 text-gray-500 border-gray-200 text-[11px] font-semibold px-3 py-0.5 rounded-full border">
-                                    {selectedData.provider || "N/A"}
+                                    {selectedData.provider?.provider_name || "N/A"}
                                 </span>
                             </div>
                         </div>

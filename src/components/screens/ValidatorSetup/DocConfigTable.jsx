@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setValidatorDocDetails, setPolicyExtractedFields } from "../../../store/slices/validatorSetupSlice";
 import { createValidatorDocDetails, getValidatorDocDetails, deleteValidatorDocDetails, updateValidatorDocDetails, getPolicyExtractedFields } from "../../api/validatorApiCall";
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
-
+import ReactDOM from "react-dom";
 const MAX_VISIBLE_FIELDS = 2;
 
 // ── Skeleton rows (desktop) ───────────────────────────────────────────────────
@@ -73,19 +73,47 @@ const SkeletonHeaderBadges = () => (
 // ── Toast ─────────────────────────────────────────────────────────────────────
 const Toast = ({ toasts, onClose }) => (
     <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none">
-        {toasts.map((t) => (
-            <div key={t.id} style={{ animation: "slideIn 0.25s ease" }}
-                className="pointer-events-auto flex items-start gap-3 bg-white border border-gray-200 rounded-2xl shadow-xl px-4 py-3 min-w-[260px] max-w-[320px]">
-                <div className={`flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0 ${t.type === "success" ? "bg-green-50" : "bg-red-50"}`}>
-                    {t.type === "success" ? <Check size={13} className="text-green-500" /> : <X size={13} className="text-red-500" />}
+        {toasts.map((t) => {
+            const isSuccess = t.type === "success";
+            return (
+                <div
+                    key={t.id}
+                    style={{ animation: "slideIn 0.25s ease" }}
+                    className={`pointer-events-auto flex items-center gap-3 rounded-xl shadow-lg px-4 py-3 min-w-[260px] max-w-[320px] border ${
+                        isSuccess
+                            ? "bg-green-50 border-green-200"
+                            : "bg-red-50 border-red-200"
+                    }`}
+                >
+                    <div className={`flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0 ${
+                        isSuccess ? "bg-green-100" : "bg-red-100"
+                    }`}>
+                        {isSuccess
+                            ? <Check size={13} className="text-green-600" />
+                            : <X size={13} className="text-red-500" />
+                        }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className={`text-[13px] font-semibold ${isSuccess ? "text-green-700" : "text-red-700"}`}>
+                            {t.title}
+                        </p>
+                        {t.subtitle && (
+                            <p className={`text-[11px] mt-0.5 ${isSuccess ? "text-green-600" : "text-red-500"}`}>
+                                {t.subtitle}
+                            </p>
+                        )}
+                    </div>
+                    <button
+                        onClick={() => onClose(t.id)}
+                        className={`flex-shrink-0 transition ${
+                            isSuccess ? "text-green-400 hover:text-green-600" : "text-red-300 hover:text-red-500"
+                        }`}
+                    >
+                        <X size={13} />
+                    </button>
                 </div>
-                <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-bold text-gray-800">{t.title}</p>
-                    {t.subtitle && <p className="text-[11px] text-gray-400 mt-0.5">{t.subtitle}</p>}
-                </div>
-                <button onClick={() => onClose(t.id)} className="text-gray-300 hover:text-gray-500 flex-shrink-0"><X size={13} /></button>
-            </div>
-        ))}
+            );
+        })}
     </div>
 );
 
@@ -130,12 +158,13 @@ const FieldTag = ({ label }) => (
 
 const ExtraFieldsBadge = ({ fields }) => {
     const [open, setOpen] = useState(false);
-    const [popupStyle, setPopupStyle] = useState({});
+    const [popupPos, setPopupPos] = useState({ top: 0, left: 0 });
     const ref = useRef(null);
-    const popRef = useRef(null);
 
     useEffect(() => {
-        const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+        const handler = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+        };
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
     }, []);
@@ -146,28 +175,56 @@ const ExtraFieldsBadge = ({ fields }) => {
             const rect = ref.current.getBoundingClientRect();
             const popupW = 220;
             const popupH = 200;
-            const spaceRight = window.innerWidth - rect.left;
-            const spaceBelow = window.innerHeight - rect.bottom;
-            const style = {};
-            if (spaceRight < popupW) { style.right = 0; style.left = "auto"; } else { style.left = 0; style.right = "auto"; }
-            if (spaceBelow < popupH) { style.bottom = "100%"; style.top = "auto"; style.marginBottom = "4px"; } else { style.top = "100%"; style.bottom = "auto"; style.marginTop = "4px"; }
-            setPopupStyle(style);
+
+            // ── Horizontal: shift left if near right edge ──
+            let left = rect.left;
+            if (rect.left + popupW > window.innerWidth) {
+                left = rect.right - popupW;
+            }
+
+            // ── Vertical: flip upward if not enough space below ──
+            let top;
+            if (window.innerHeight - rect.bottom < popupH) {
+                top = rect.top - popupH - 4 + window.scrollY;
+            } else {
+                top = rect.bottom + 4 + window.scrollY;
+            }
+
+            setPopupPos({ top, left: left + window.scrollX });
         }
         setOpen((o) => !o);
     };
 
     return (
         <div className="relative" ref={ref}>
-            <button onClick={handleToggle} className="text-[11px] font-semibold text-gray-400 hover:text-[#6B55E8] transition-colors">
+            <button
+                onClick={handleToggle}
+                className="text-[11px] font-semibold text-gray-400 hover:text-[#6B55E8] transition-colors whitespace-nowrap"
+            >
                 +{fields.length} More
             </button>
-            {open && (
-                <div ref={popRef} style={popupStyle} className="absolute z-50 top-8 sm:left-0 left-[-140px] bg-white border border-gray-200 rounded-xl shadow-xl p-3 min-w-[200px] w-max max-w-[260px]">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2.5">{fields.length} more field{fields.length > 1 ? "s" : ""}</p>
+
+            {/* ✅ Portal — renders outside table DOM, escapes overflow:hidden */}
+            {open && ReactDOM.createPortal(
+                <div
+                    style={{ top: popupPos.top, left: popupPos.left }}
+                    className="fixed z-[9999] bg-white border border-gray-200 rounded-xl shadow-xl p-3 min-w-[200px] w-max max-w-[260px]"
+                >
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2.5">
+                        {fields.length} more field{fields.length > 1 ? "s" : ""}
+                    </p>
                     <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
-                        {fields.map((f) => <FieldTag key={f} label={f} />)}
+                        {fields.map((f) => (
+                            <span
+                                key={f}
+                                className="text-[11px] font-medium text-indigo-500 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md font-mono whitespace-nowrap"
+                            >
+                                {f}
+                            </span>
+                        ))}
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
