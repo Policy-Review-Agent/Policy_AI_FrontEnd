@@ -4,21 +4,21 @@ import { selectPolicy } from "../../../store/slices/batchSlice";
 import { navigate } from "../../../store/slices/navigationSlice";
 import { ArrowRight, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import Breadcrumb from "../../layout/Breadcrumb";
-import { setPolicyCheckList } from "../../../store/slices/batchSlice";
+import { setPolicyCheckList, setpolicyAIStatus, setpolicyValidation } from "../../../store/slices/batchSlice";
 import { getPolicyCheckList } from "../../api/apisCall";
 import Pagination from "../Pagination/Pagination";
 
-const AI_MAP  = { completed: "bg-green-50 text-green-600", running: "bg-amber-50 text-amber-600", failed: "bg-red-50 text-red-600" };
-const CK_MAP  = { "All Present": "bg-green-50 text-green-600", Pending: "bg-amber-50 text-amber-600", Missing: "bg-red-50 text-red-600" };
+const AI_MAP = { completed: "bg-green-50 text-green-600", running: "bg-amber-50 text-amber-600", failed: "bg-red-50 text-red-600" };
+const CK_MAP = { "All Present": "bg-green-50 text-green-600", Pending: "bg-amber-50 text-amber-600", Missing: "bg-red-50 text-red-600" };
 const VAL_MAP = { Pass: "bg-green-50 text-green-600", "Failed": "bg-amber-50 text-amber-600", pending: "bg-amber-50 text-amber-600" };
 const TYPE_MAP = { Auto: "bg-blue-50 text-blue-600", Home: "bg-green-50 text-green-600", Commercial: "bg-purple-50 text-purple-600" };
-const ST_MAP  = { completed: "bg-green-50 text-green-600", "in progress": "bg-blue-50 text-blue-600", "needs attention": "bg-red-50 text-red-600", processing: "bg-blue-50 text-blue-600" };
+const ST_MAP = { completed: "bg-green-50 text-green-600", "in progress": "bg-blue-50 text-blue-600", "needs attention": "bg-red-50 text-red-600", processing: "bg-blue-50 text-blue-600" };
 
 const TABLE_HEADS = ["Policy #", "Customer", "Office Name", "Customer CSR", "Type", "Sold Date", "Docs", "AI Status", "Validation", "Action"];
 
 const SORT_KEYS = {
-    "Policy #":     "policy_number",
-    "Customer":     "customer_name",
+    "Policy #": "policy_number",
+    "Customer": "customer_name",
     "Customer CSR": "customer_csr",
 };
 
@@ -31,7 +31,7 @@ const Badge = ({ label, map }) => (
 const SortIcon = ({ field, sortField, sortDir }) => {
     if (sortField !== field) return <ArrowUpDown size={11} className="text-gray-500 ms-1 inline" />;
     return sortDir === "asc"
-        ? <ArrowUp   size={11} className="text-indigo-500 ms-1 inline" />
+        ? <ArrowUp size={11} className="text-indigo-500 ms-1 inline" />
         : <ArrowDown size={11} className="text-indigo-500 ms-1 inline" />;
 };
 
@@ -79,11 +79,11 @@ const PolicyListing = () => {
     const dispatch = useDispatch();
     const { policySummary, policyList } = useSelector((state) => state.batch);
 
-    const [searchTerm,   setSearchTerm]   = useState("");
-    const [currentPage,  setCurrentPage]  = useState(1);
-    const [rowsPerPage,  setRowsPerPage]  = useState(10);
-    const [sortField,    setSortField]    = useState(null);
-    const [sortDir,      setSortDir]      = useState("asc");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [sortField, setSortField] = useState(null);
+    const [sortDir, setSortDir] = useState("asc");
 
     // ✅ Derived — no effect needed
     const loading = !policyList;
@@ -113,7 +113,7 @@ const PolicyListing = () => {
         return sortDir === "asc" ? cmp : -cmp;
     });
 
-    const startIndex    = (currentPage - 1) * rowsPerPage;
+    const startIndex = (currentPage - 1) * rowsPerPage;
     const paginatedList = sortedData.slice(startIndex, startIndex + rowsPerPage);
 
     const handleRowsPerPageChange = (newRows) => {
@@ -121,9 +121,11 @@ const PolicyListing = () => {
         setCurrentPage(1);
     };
 
-    const handleOpenPolicy = (idx) => {
+    const handleOpenPolicy = (idx, aistatus, validation) => {
         dispatch(selectPolicy(idx));
         getPolicyCheckList(setPolicyCheckList, policyList[idx].policy_id, dispatch);
+        dispatch(setpolicyAIStatus(aistatus))
+        dispatch(setpolicyValidation(validation))
         dispatch(navigate("checklist"));
     };
 
@@ -174,11 +176,10 @@ const PolicyListing = () => {
                                         <th
                                             key={h}
                                             onClick={() => isSortable && handleSort(h)}
-                                            className={`text-[11px] font-semibold uppercase tracking-wider px-4 py-2.5 border-b border-gray-100 whitespace-nowrap select-none transition-colors ${
-                                                isSortable
-                                                    ? "cursor-pointer hover:bg-gray-100 hover:text-gray-600"
-                                                    : "cursor-default"
-                                            } ${sortField === h ? "text-indigo-500" : "text-gray-400"}`}
+                                            className={`text-[11px] font-semibold uppercase tracking-wider px-4 py-2.5 border-b border-gray-100 whitespace-nowrap select-none transition-colors ${isSortable
+                                                ? "cursor-pointer hover:bg-gray-100 hover:text-gray-600"
+                                                : "cursor-default"
+                                                } ${sortField === h ? "text-indigo-500" : "text-gray-400"}`}
                                         >
                                             {h}
                                             {isSortable && (
@@ -196,7 +197,7 @@ const PolicyListing = () => {
                                 paginatedList.map((p, i) => (
                                     <tr
                                         key={p.policy_id || p.id || i}
-                                        onClick={() => handleOpenPolicy(startIndex + i)}
+                                        onClick={() => handleOpenPolicy(startIndex + i, p.ai_status, p.validation_status)}
                                         className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors last:border-b-0"
                                     >
                                         <td className="px-4 py-1.5 max-w-[140px]">
@@ -235,7 +236,7 @@ const PolicyListing = () => {
                                         </td>
                                         <td className="px-4 py-1.5">
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); handleOpenPolicy(startIndex + i); }}
+                                                onClick={(e) => { e.stopPropagation(); handleOpenPolicy(startIndex + i, p.ai_status, p.validation_status); }}
                                                 className="flex items-center gap-1 text-[11px] font-semibold text-gray-500 border border-gray-200 bg-white hover:border-gray-300 hover:text-gray-700 px-2.5 py-1 rounded-md transition"
                                             >
                                                 View <ArrowRight size={11} />
@@ -264,7 +265,7 @@ const PolicyListing = () => {
                             return (
                                 <div
                                     key={p.policy_id || p.id || i}
-                                    onClick={() => handleOpenPolicy(startIndex + i)}
+                                    onClick={() => handleOpenPolicy(startIndex + i, p.ai_status, p.validation_status)}
                                     className="bg-white border border-gray-200 rounded-xl shadow-sm cursor-pointer active:bg-gray-50 transition-colors overflow-hidden"
                                 >
                                     <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-gray-100">
