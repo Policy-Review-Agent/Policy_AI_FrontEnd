@@ -9,13 +9,13 @@ const batchSlice = createSlice({
     dashboardStats: null,
     dashboardList: [],
     policySummary: null,
-    policyList: [],
+    policyList: null,
     checklistSummary: null,
     policyCheckList: [],
     documentData: [],
     insureTypeIndex: 0,
-    policyAIStatus:"",
-    policyvalidation:""
+    policyAIStatus: "",
+    policyvalidation: ""
   },
   reducers: {
     selectBatch: (state, action) => {
@@ -36,6 +36,10 @@ const batchSlice = createSlice({
     },
     setPolicyList: (state, action) => {
       state.policyList = action.payload
+    },
+    resetPolicyList: (state) => {
+      state.policyList = null;
+      state.policySummary = null;
     },
     setChecklistSummary: (state, action) => {
       state.checklistSummary = action.payload
@@ -71,6 +75,7 @@ export const {
   setInsureTypeIndex,
   setpolicyAIStatus,
   setpolicyValidation,
+  resetPolicyList,
 } = batchSlice.actions;
 
 export const selectCurrentBatch = (s) =>

@@ -86,7 +86,8 @@ const PolicyListing = () => {
     const [sortDir, setSortDir] = useState("asc");
 
     // ✅ Derived — no effect needed
-    const loading = !policyList;
+    // const loading = !policyList;
+    const loading = policyList === null || policyList === undefined;
 
     const handleSort = (field) => {
         if (sortField === field) {
