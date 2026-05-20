@@ -239,7 +239,7 @@ const Dashboard = () => {
                             value={searchTerm}
                             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                             placeholder="Search"
-                            className="w-[160px] border border-gray-200 rounded-lg px-3 py-[5px] text-[12px] font-mono text-gray-700 bg-gray-50 outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-400"
+                            className="w-[200px] border border-gray-200 rounded-lg px-3 py-[5px] text-[12px] font-mono text-gray-700 bg-gray-50 outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-400"
                         />
                     </div>
                 </div>
