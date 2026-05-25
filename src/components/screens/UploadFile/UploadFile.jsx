@@ -3,6 +3,7 @@ import { Upload, AlertCircle, X, FileText, CheckCircle } from "lucide-react";
 import { UploadCSVFile } from "../../api/apisCall";
 import { navigate } from "../../../store/slices/navigationSlice";
 import { useDispatch } from "react-redux";
+import { setDashboardList, setDashboardStats } from "../../../store/slices/batchSlice";
 const UploadFile = () => {
     const dispatch = useDispatch()
     const [file, setFile] = useState(null);
@@ -64,15 +65,18 @@ const UploadFile = () => {
             if (response?.data?.status === true || response?.status === 200) {
                 showToast("success", response?.data?.message || "File uploaded successfully.");
                 handleCancel();
+
                 setTimeout(() => {
                     dispatch(navigate("dashboard"));
+                    getDashboardStats(setDashboardStats, dispatch)
+                    getDashboardList(setDashboardList, dispatch)
                 }, 2000); // wait 2s for toast to show then navigate
             } else {
                 const errMsg = response?.data?.message || "Upload failed. Please try again.";
                 showToast("error", errMsg);
             }
         } catch (err) {
-            showToast("error", "Something went wrong. Please try again.",err);
+            showToast("error", "Something went wrong. Please try again.", err);
         } finally {
             setUploading(false);
         }

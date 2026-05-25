@@ -4,7 +4,7 @@ import { selectPolicy } from "../../../store/slices/batchSlice";
 import { navigate } from "../../../store/slices/navigationSlice";
 import { ArrowRight, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import Breadcrumb from "../../layout/Breadcrumb";
-import { setPolicyCheckList, setpolicyAIStatus, setpolicyValidation } from "../../../store/slices/batchSlice";
+import { setPolicyCheckList, setpolicyAIStatus, setpolicyValidation, setPolicyRowPerPage } from "../../../store/slices/batchSlice";
 import { getPolicyCheckList } from "../../api/apisCall";
 import Pagination from "../Pagination/Pagination";
 
@@ -77,11 +77,9 @@ const SkeletonMobileCards = ({ count = 4 }) => (
 
 const PolicyListing = () => {
     const dispatch = useDispatch();
-    const { policySummary, policyList } = useSelector((state) => state.batch);
-
+    const { policySummary, policyList, policyRowPerPage } = useSelector((state) => state.batch);
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [sortField, setSortField] = useState(null);
     const [sortDir, setSortDir] = useState("asc");
 
@@ -114,11 +112,11 @@ const PolicyListing = () => {
         return sortDir === "asc" ? cmp : -cmp;
     });
 
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const paginatedList = sortedData.slice(startIndex, startIndex + rowsPerPage);
+    const startIndex = (currentPage - 1) * policyRowPerPage;
+    const paginatedList = sortedData.slice(startIndex, startIndex + policyRowPerPage);
 
     const handleRowsPerPageChange = (newRows) => {
-        setRowsPerPage(newRows);
+        dispatch(setPolicyRowPerPage(newRows));
         setCurrentPage(1);
     };
 
@@ -130,6 +128,16 @@ const PolicyListing = () => {
         dispatch(navigate("checklist"));
     };
 
+    const Tooltip = ({ label, children }) => (
+        <span className="relative group inline-flex items-center">
+            {children}
+            <span className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:block z-50 whitespace-nowrap">
+                <span className="bg-gray-800 text-white text-[10px] font-medium px-2 py-1 rounded-md shadow-md">
+                    {label}
+                </span>
+            </span>
+        </span>
+    );
     return (
         <div className="min-w-0 w-full">
             <Breadcrumb crumbs={[{ label: "Dashboard", screen: "dashboard" }, { label: "Policy List" }]} />
@@ -137,8 +145,12 @@ const PolicyListing = () => {
             {/* Page Header */}
             <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
                 <div>
-                    <h1 className="text-xl font-bold text-gray-800 tracking-tight">Policies – {policySummary?.batch_id}</h1>
-                    <p className="text-sm text-gray-500 mt-0.5">Batch Date: {policySummary?.batch_date}</p>
+                    <h1 className="text-xl font-bold text-gray-800 tracking-tight">
+                        Policies – <Tooltip label="Batch ID">{policySummary?.batch_id}</Tooltip>
+                    </h1>
+                    <p className="text-sm text-gray-500 mt-0.5">
+                        <Tooltip label="Batch Date">Batch Date: {policySummary?.batch_date}</Tooltip>
+                    </p>
                 </div>
                 <div className="flex items-center gap-4 flex-wrap">
                     <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${ST_MAP[policySummary?.status] || "bg-gray-100 text-gray-500"}`}>
@@ -147,7 +159,7 @@ const PolicyListing = () => {
                     <div className="text-sm text-gray-500 flex gap-3">
                         <span>Total: <strong className="text-gray-800">{policySummary?.total_policies}</strong></span>
                         <span>Ready For Review: <strong className="text-green-600">{policySummary?.processed}</strong></span>
-                        <span>Reviewed: <strong className="text-amber-500">{policySummary?.pending}</strong></span>
+                        <span>Reviewed: <strong className="text-amber-500">{policySummary?.reviewed}</strong></span>
                     </div>
                 </div>
             </div>
@@ -308,7 +320,7 @@ const PolicyListing = () => {
                 <div className="border-t border-gray-100 px-4 py-2 flex justify-start relative">
                     <Pagination
                         records={sortedData.length}
-                        rowsPerPage={rowsPerPage}
+                        rowsPerPage={policyRowPerPage}
                         currentPage={currentPage}
                         onPageChange={setCurrentPage}
                         onRowsPerPageChange={handleRowsPerPageChange}

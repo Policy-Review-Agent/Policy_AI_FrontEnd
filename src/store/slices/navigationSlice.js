@@ -2,10 +2,11 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const navigationSlice = createSlice({
   name: "navigation",
-  initialState: { screen: "dashboard", loginDetails: {} },
+  initialState: { screen: sessionStorage.getItem("current_screen") || "dashboard", loginDetails: {} },
   reducers: {
     navigate: (state, action) => {
       state.screen = action.payload;
+      sessionStorage.setItem("current_screen", action.payload);
     },
     validatorNavigate: (state, action) => {
       state.screen = action.payload;

@@ -110,12 +110,7 @@ const Field = ({ label, required, children }) => (
     </div>
 );
 
-// ── Reusable searchable dropdown ──────────────────────────────────────────────
-// ── 1. Map providers to { label, value } shape ────────────────────────────────
-// value = id (what gets stored/passed), label = provider_name (what gets shown)
 
-
-// ── 2. Updated SearchableSelect — supports both plain strings and {label,value} objects ──
 const SearchableSelect = ({ value, onChange, options, placeholder, dropRef }) => {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
@@ -249,7 +244,8 @@ const AddPolicyPanel = ({ open, onClose, onSave }) => {
         getLocations(value, dispatch, setLocations);
     };
 
-    const canSave = form.checklistName.trim() && form.provider && form.state && form.location;
+    // const canSave = form.checklistName.trim() && form.provider && form.state && form.location;
+    const canSave = form.checklistName.trim();
 
     const handleSave = () => {
         if (!canSave) return;
@@ -296,7 +292,7 @@ const AddPolicyPanel = ({ open, onClose, onSave }) => {
                         />
                     </Field>
 
-                    <Field label="Provider" required>
+                    <Field label="Provider" >
                         <SearchableSelect
                             value={form.provider}
                             onChange={set("provider")}
@@ -307,7 +303,7 @@ const AddPolicyPanel = ({ open, onClose, onSave }) => {
                     </Field>
 
                     {/* ✅ Fix: removed duplicate nested <Field label="State"> */}
-                    <Field label="State" required>
+                    <Field label="State" >
                         <SearchableSelect
                             value={form.state}
                             onChange={handleState}
@@ -317,7 +313,7 @@ const AddPolicyPanel = ({ open, onClose, onSave }) => {
                         />
                     </Field>
 
-                    <Field label="Location" required>
+                    <Field label="Location" >
                         <SearchableSelect
                             value={form.location}
                             onChange={set("location")}
@@ -506,7 +502,7 @@ const ValidatorSetup = () => {
                                 <div className={`${BG_PRESETS[idx % BG_PRESETS.length]} w-fit p-3 rounded-xl shadow-md`}>
                                     <Shield size={15} className="text-white" />
                                 </div>
-                                <button
+                                {/* <button
                                     onClick={(e) => handleDeploy(e, value.id)}
                                     disabled={deployingId === value.id}
                                     className={`flex items-center gap-1 text-[12px] font-semibold text-white px-2 py-1 rounded-md transition-all
@@ -526,7 +522,7 @@ const ValidatorSetup = () => {
                                     ) : (
                                         <><Rocket size={13} /> Deploy</>
                                     )}
-                                </button>
+                                </button> */}
                             </div>
 
                             {/* Name + description */}

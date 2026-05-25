@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 
 const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const MONTHS = [
@@ -62,7 +62,7 @@ const CalendarMonth = ({ year, month, startDate, endDate, hoverDate, onDayClick,
         {cells.map((date, i) => {
           if (!date) return <div key={i} style={{ height: cellSize }} />;
 
-          const isFuture = maxDate && date > maxDate;  // ← add this line
+          const isFuture = maxDate && date > maxDate;
           const isStart = isSameDay(date, startDate);
           const isEnd = isSameDay(date, endDate) || isSameDay(date, hoverDate);
           const inRange = isInRange(date, startDate, rangeEnd);
@@ -78,8 +78,8 @@ const CalendarMonth = ({ year, month, startDate, endDate, hoverDate, onDayClick,
           return (
             <div
               key={i}
-              onClick={() => !isFuture && onDayClick(date)}       // ← guard
-              onMouseEnter={() => !isFuture && onDayHover(date)}  // ← guard
+              onClick={() => !isFuture && onDayClick(date)}
+              onMouseEnter={() => !isFuture && onDayHover(date)}
               style={{
                 textAlign: "center",
                 fontSize: compact ? 10 : 11,
@@ -87,10 +87,10 @@ const CalendarMonth = ({ year, month, startDate, endDate, hoverDate, onDayClick,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: isFuture ? "transparent" : bg,        // ← no highlight on future
-                color: isFuture ? "#d1d5db" : color,              // ← dimmed text
+                background: isFuture ? "transparent" : bg,
+                color: isFuture ? "#d1d5db" : color,
                 borderRadius,
-                cursor: isFuture ? "not-allowed" : "pointer",     // ← block cursor
+                cursor: isFuture ? "not-allowed" : "pointer",
                 fontWeight: isSelected ? 600 : isToday ? 600 : 400,
                 outline: isToday && !isSelected ? "1.5px solid #c7d2fe" : "none",
                 outlineOffset: -1,
@@ -105,7 +105,7 @@ const CalendarMonth = ({ year, month, startDate, endDate, hoverDate, onDayClick,
       </div>
     </div>
   );
-}
+};
 
 // ─── PresetItem ───────────────────────────────────────────────────────────────
 const PresetItem = ({ label, active, onClick, compact }) => {
@@ -130,14 +130,16 @@ const PresetItem = ({ label, active, onClick, compact }) => {
       {label}
     </div>
   );
-}
+};
 
 // ─── Main component ───────────────────────────────────────────────────────────
-// Props:
-//   onApply(startDate: Date, endDate: Date)
-//   onClear()
 const CustomDatePicker = ({ onApply, onClear }) => {
-  const today = new Date();
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
   const [open, setOpen] = useState(false);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
@@ -148,71 +150,53 @@ const CustomDatePicker = ({ onApply, onClear }) => {
     year: today.getMonth() === 0 ? today.getFullYear() - 1 : today.getFullYear(),
     month: today.getMonth() === 0 ? 11 : today.getMonth() - 1,
   });
-  const [rightMonth, setRightMonth] = useState({ year: today.getFullYear(), month: today.getMonth() });
+  const [rightMonth, setRightMonth] = useState({
+    year: today.getFullYear(),
+    month: today.getMonth(),
+  });
 
-  // ── Popup layout state ──
-  // mode: "dual" | "single" | "mobile"
-  // openUp: boolean — open above trigger if not enough space below
-  // alignLeft: boolean — align left edge of popup to trigger
   const [layout, setLayout] = useState({ mode: "dual", openUp: false, alignLeft: false, popupWidth: 600 });
 
   const triggerRef = useRef();
   const popupRef = useRef();
-  const ref = useRef(); // wraps both
+  const ref = useRef();
 
-  // ── Compute layout based on available screen space ──
+  // ── Clamp a month object so it never exceeds today's month ──
+  const clampToToday = (m) => {
+    if (
+      m.year > today.getFullYear() ||
+      (m.year === today.getFullYear() && m.month > today.getMonth())
+    ) {
+      return { year: today.getFullYear(), month: today.getMonth() };
+    }
+    return m;
+  };
+
+  // ── Compute layout ──
   const computeLayout = useCallback(() => {
     if (!triggerRef.current) return;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const rect = triggerRef.current.getBoundingClientRect();
-    const spaceRight = vw - rect.left;          // space from trigger left edge → right edge of viewport
-    const spaceLeft = rect.right;              // space from viewport left → trigger right edge
     const spaceBelow = vh - rect.bottom - 8;
     const spaceAbove = rect.top - 8;
 
-    // Width tiers
-    let mode = "dual";        // two calendars + presets  ≈ 600px
-    let popupWidth = 600;
+    let mode = "dual", popupWidth = 600;
+    if (vw < 480) { mode = "mobile"; popupWidth = Math.min(vw - 16, 280); }
+    else if (vw < 700) { mode = "single"; popupWidth = 340; }
 
-    if (vw < 480) {
-      mode = "mobile";        // single calendar, no presets ≈ 260px
-      popupWidth = Math.min(vw - 16, 280);
-    } else if (vw < 700 || spaceRight < 520 && spaceLeft < 520) {
-      mode = "single";        // single calendar + presets ≈ 340px
-      popupWidth = 340;
-    } else {
-      mode = "dual";
-      popupWidth = 600;
-    }
-
-    // Horizontal: prefer right-aligned (right edge of popup = right edge of trigger)
-    // Fall back to left-aligned if it would go off-screen left
-    const alignLeft = rect.left + popupWidth <= vw + 4;   // fits if we open from left edge of trigger
-    // Actually: right-aligned means popup's right = trigger's right
-    // left-aligned means popup's left = trigger's left
-    // We prefer whichever keeps popup fully on screen
-    const wouldOverflowRight = rect.right - popupWidth < 0; // right-aligned overflows left
-    const finalAlignLeft = wouldOverflowRight ? true : !true; // default right, flip if needed
-    // Simplified: if enough space to the right of trigger's left edge use alignLeft, else right-align
     const useAlignLeft = rect.left + popupWidth <= vw;
-
-    // Vertical: open below unless not enough room
     const needsAbove = spaceBelow < 320 && spaceAbove > spaceBelow;
 
     setLayout({ mode, openUp: needsAbove, alignLeft: useAlignLeft, popupWidth });
   }, []);
 
-  useEffect(() => {
-    if (open) computeLayout();
-  }, [open, computeLayout]);
-
+  useEffect(() => { if (open) computeLayout(); }, [open, computeLayout]);
   useEffect(() => {
     window.addEventListener("resize", computeLayout);
     return () => window.removeEventListener("resize", computeLayout);
   }, [computeLayout]);
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener("mousedown", handler);
@@ -228,15 +212,29 @@ const CustomDatePicker = ({ onApply, onClear }) => {
       else { setEndDate(date); }
       setSelecting(false); setActivePreset(null);
     }
-  }
+  };
 
   const handlePreset = (p, idx) => {
     const [s, e] = p.fn();
     setStartDate(s); setEndDate(e); setSelecting(false); setActivePreset(idx);
+
     const sm = s.getMonth(), sy = s.getFullYear();
-    setLeftMonth({ year: sy, month: sm });
-    setRightMonth(sm + 1 > 11 ? { year: sy + 1, month: 0 } : { year: sy, month: sm + 1 });
-  }
+
+    // Build the two months and clamp both to today
+    let newLeft = { year: sy, month: sm };
+    let newRight = sm + 1 > 11 ? { year: sy + 1, month: 0 } : { year: sy, month: sm + 1 };
+
+    newRight = clampToToday(newRight);
+    // If clamping pushed right == left, shift left back one month
+    if (newRight.year === newLeft.year && newRight.month === newLeft.month) {
+      newLeft = newLeft.month - 1 < 0
+        ? { year: newLeft.year - 1, month: 11 }
+        : { year: newLeft.year, month: newLeft.month - 1 };
+    }
+
+    setLeftMonth(newLeft);
+    setRightMonth(newRight);
+  };
 
   const prevMonth = () => {
     setLeftMonth(p => {
@@ -244,23 +242,33 @@ const CustomDatePicker = ({ onApply, onClear }) => {
       setRightMonth(m.month + 1 > 11 ? { year: m.year + 1, month: 0 } : { year: m.year, month: m.month + 1 });
       return m;
     });
-  }
+  };
+
   const nextMonth = () => {
+    // Block if right is already at current month
+    const isAtMax =
+      rightMonth.year > today.getFullYear() ||
+      (rightMonth.year === today.getFullYear() && rightMonth.month >= today.getMonth());
+    if (isAtMax) return;
+
     setRightMonth(p => {
-      const m = p.month + 1 > 11 ? { year: p.year + 1, month: 0 } : { year: p.year, month: p.month + 1 };
+      const m = clampToToday(
+        p.month + 1 > 11 ? { year: p.year + 1, month: 0 } : { year: p.year, month: p.month + 1 }
+      );
       setLeftMonth(m.month - 1 < 0 ? { year: m.year - 1, month: 11 } : { year: m.year, month: m.month - 1 });
       return m;
     });
-  }
+  };
 
   const handleApply = () => {
     if (startDate && onApply) onApply(startDate, endDate || startDate);
     setOpen(false);
-  }
+  };
+
   const handleClear = () => {
     setStartDate(null); setEndDate(null); setSelecting(false); setActivePreset(null);
     if (onClear) onClear();
-  }
+  };
 
   const hasValue = !!startDate;
   const displayValue = hasValue
@@ -272,15 +280,14 @@ const CustomDatePicker = ({ onApply, onClear }) => {
   const { mode, openUp, alignLeft, popupWidth } = layout;
   const compact = mode !== "dual";
 
-  // Popup position styles
+  const isNextDisabled =
+    rightMonth.year > today.getFullYear() ||
+    (rightMonth.year === today.getFullYear() && rightMonth.month >= today.getMonth());
+
   const popupPositionStyle = {
     position: "absolute",
-    ...(openUp
-      ? { bottom: "calc(100% + 6px)", top: "auto" }
-      : { top: "calc(100% + 6px)", bottom: "auto" }),
-    ...(alignLeft
-      ? { left: 0, right: "auto" }
-      : { right: 0, left: "auto" }),
+    ...(openUp ? { bottom: "calc(100% + 6px)", top: "auto" } : { top: "calc(100% + 6px)", bottom: "auto" }),
+    ...(alignLeft ? { left: 0, right: "auto" } : { right: 0, left: "auto" }),
     width: popupWidth,
     maxWidth: "calc(100vw - 16px)",
   };
@@ -292,12 +299,13 @@ const CustomDatePicker = ({ onApply, onClear }) => {
       <div
         ref={triggerRef}
         onClick={() => setOpen(o => !o)}
-        className={`inline-flex items-center gap-1.5 px-2.5 py-[5px] rounded-lg border text-[12px] font-mono cursor-pointer select-none transition-all ${open
-          ? "border-[#6366f1] ring-2 ring-[#6366f1]/20 bg-white text-[#4f46e5]"
-          : hasValue
-            ? "border-[#6366f1]/40 bg-[#eef2ff] text-[#4f46e5]"
-            : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:bg-white"
-          }`}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-[5px] rounded-lg border text-[12px] font-mono cursor-pointer select-none transition-all ${
+          open
+            ? "border-[#6366f1] ring-2 ring-[#6366f1]/20 bg-white text-[#4f46e5]"
+            : hasValue
+              ? "border-[#6366f1]/40 bg-[#eef2ff] text-[#4f46e5]"
+              : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:bg-white"
+        }`}
         style={{ minWidth: 190 }}
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
@@ -310,9 +318,7 @@ const CustomDatePicker = ({ onApply, onClear }) => {
           <line x1="8" y1="2" x2="8" y2="6" />
           <line x1="3" y1="10" x2="21" y2="10" />
         </svg>
-
         <span className="flex-1 truncate">{displayValue}</span>
-
         <div className="flex items-center gap-1 flex-shrink-0">
           {hasValue && (
             <span
@@ -349,25 +355,14 @@ const CustomDatePicker = ({ onApply, onClear }) => {
             overflow: "hidden",
           }}
         >
-          {/* Presets — hidden on mobile mode */}
+          {/* Presets */}
           {mode !== "mobile" && (
-            <div style={{
-              width: compact ? 100 : 115,
-              borderRight: "1px solid #f0f0f0",
-              padding: "10px 0",
-              flexShrink: 0,
-            }}>
+            <div style={{ width: compact ? 100 : 115, borderRight: "1px solid #f0f0f0", padding: "10px 0", flexShrink: 0 }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.07em", textTransform: "uppercase", padding: "0 10px 6px" }}>
                 Quick select
               </div>
               {PRESETS.map((p, i) => (
-                <PresetItem
-                  key={i}
-                  label={p.label}
-                  active={activePreset === i}
-                  compact={compact}
-                  onClick={() => handlePreset(p, i)}
-                />
+                <PresetItem key={i} label={p.label} active={activePreset === i} compact={compact} onClick={() => handlePreset(p, i)} />
               ))}
             </div>
           )}
@@ -375,7 +370,7 @@ const CustomDatePicker = ({ onApply, onClear }) => {
           {/* Calendar area */}
           <div style={{ flex: 1, padding: compact ? "10px 8px 8px" : "14px 10px 10px", minWidth: 0 }}>
 
-            {/* Mobile: inline preset chips */}
+            {/* Mobile preset chips */}
             {mode === "mobile" && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
                 {PRESETS.map((p, i) => (
@@ -398,18 +393,23 @@ const CustomDatePicker = ({ onApply, onClear }) => {
 
             {/* Nav */}
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-              <button onClick={prevMonth} style={{ background: "none", border: "1px solid #e5e7eb", borderRadius: 5, width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#6b7280" }}>
-                <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="8,2 4,6 8,10" /></svg>
+              <button
+                onClick={prevMonth}
+                style={{ background: "none", border: "1px solid #e5e7eb", borderRadius: 5, width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#6b7280" }}
+              >
+                <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <polyline points="8,2 4,6 8,10" />
+                </svg>
               </button>
               <button
                 onClick={nextMonth}
-                disabled={rightMonth.year === today.getFullYear() && rightMonth.month === today.getMonth()}
+                disabled={isNextDisabled}
                 style={{
                   background: "none", border: "1px solid #e5e7eb", borderRadius: 5,
                   width: 22, height: 22, display: "flex", alignItems: "center",
                   justifyContent: "center", color: "#6b7280",
-                  opacity: (rightMonth.year === today.getFullYear() && rightMonth.month === today.getMonth()) ? 0.3 : 1,
-                  cursor: (rightMonth.year === today.getFullYear() && rightMonth.month === today.getMonth()) ? "not-allowed" : "pointer",
+                  opacity: isNextDisabled ? 0.3 : 1,
+                  cursor: isNextDisabled ? "not-allowed" : "pointer",
                 }}
               >
                 <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -425,20 +425,19 @@ const CustomDatePicker = ({ onApply, onClear }) => {
             >
               <CalendarMonth
                 {...leftMonth}
-                maxDate={today}          // ← add
+                maxDate={today}
                 startDate={startDate} endDate={endDate}
                 hoverDate={selecting ? hoverDate : null}
                 onDayClick={handleDayClick}
                 onDayHover={d => selecting && setHoverDate(d)}
                 compact={compact}
               />
-
               {mode === "dual" && (
                 <>
                   <div style={{ width: 1, background: "#f0f0f0", flexShrink: 0 }} />
                   <CalendarMonth
                     {...rightMonth}
-                    maxDate={today}        // ← add
+                    maxDate={today}
                     startDate={startDate} endDate={endDate}
                     hoverDate={selecting ? hoverDate : null}
                     onDayClick={handleDayClick}
@@ -452,26 +451,16 @@ const CustomDatePicker = ({ onApply, onClear }) => {
             {/* Footer */}
             <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #f0f0f0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
               <span style={{ fontSize: 10, color: "#9ca3af", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {selecting
-                  ? "Now click an end date"
-                  : startDate
-                    ? `${formatDate(startDate)}${endDate ? ` – ${formatDate(endDate)}` : ""}`
-                    : "Click a start date"}
+                {selecting ? "Now click an end date" : startDate ? `${formatDate(startDate)}${endDate ? ` – ${formatDate(endDate)}` : ""}` : "Click a start date"}
               </span>
               <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
-                <button
-                  onClick={handleClear}
-                  className="text-[11px] px-2.5 py-1 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 cursor-pointer"
-                >
+                <button onClick={handleClear} className="text-[11px] px-2.5 py-1 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 cursor-pointer">
                   Clear
                 </button>
                 <button
                   onClick={handleApply}
                   disabled={!startDate}
-                  className={`text-[11px] px-2.5 py-1 rounded-md font-medium border-0 ${startDate
-                    ? "bg-[#4f46e5] text-white hover:bg-[#4338ca] cursor-pointer"
-                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    }`}
+                  className={`text-[11px] px-2.5 py-1 rounded-md font-medium border-0 ${startDate ? "bg-[#4f46e5] text-white hover:bg-[#4338ca] cursor-pointer" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
                 >
                   Apply
                 </button>
