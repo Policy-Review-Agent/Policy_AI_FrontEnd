@@ -92,7 +92,6 @@ const AutoInsurance = () => {
 
     const selectedData = validatorlist?.[insureTypeIndex] || validatorlist?.[0];
     if (!selectedData) return null;
-console.log("selectedData",selectedData)
     return (
         <div className="min-w-0 w-full">
             <ValidatorBreadcrumb

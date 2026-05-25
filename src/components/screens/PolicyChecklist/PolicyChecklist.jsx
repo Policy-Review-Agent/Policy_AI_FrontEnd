@@ -210,7 +210,16 @@ const PolicyChecklist = () => {
             setReviewing(false);
         }
     };
-
+    const Tooltip = ({ label, children }) => (
+        <span className="relative group inline-flex items-center">
+            {children}
+            <span className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:block z-50 whitespace-nowrap">
+                <span className="bg-gray-800 text-white text-[10px] font-medium px-2 py-1 rounded-md shadow-md">
+                    {label}
+                </span>
+            </span>
+        </span>
+    );
     return (
         <div>
             <Breadcrumb
@@ -227,13 +236,19 @@ const PolicyChecklist = () => {
             <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
                 <div>
                     <h1 className="text-xl font-bold text-gray-800 tracking-tight">
-                        {checklistSummary?.customer_name}-{checklistSummary?.policy_type} Insurance
+                        <Tooltip label="Customer Name">{checklistSummary?.customer_name}</Tooltip>
+                        {" - "}
+                        <Tooltip label="Policy Type">{checklistSummary?.policy_type}</Tooltip>
+                        {" Insurance"}
                     </h1>
-                    <p className="text-[13px] text-gray-400 mt-0.5">
-                        {checklistSummary?.policy_number}
+                    <p className="text-[13px] text-gray-400 mt-0.5 flex justify-start items-center gap-1 flex-wrap">
+                        <Tooltip label="Policy Number">{checklistSummary?.policy_number}</Tooltip>
                         {checklistSummary?.sold_date && (
-                            <> . Sold {checklistSummary?.sold_date}</>
+                            <Tooltip label="Sold Date">. Sold {checklistSummary?.sold_date}</Tooltip>
                         )}
+                        <Tooltip label="Validator Setup Checklist ID">,
+                            {checklistSummary?.validator_setup_checklist_id}
+                        </Tooltip>
                     </p>
                 </div>
                 <div className="flex gap-2">

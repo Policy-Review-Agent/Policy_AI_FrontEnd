@@ -84,7 +84,16 @@ const Documents = () => {
             }
         }
     }, [policy?.policy_id, policyCheckList, isApiDataObject, documentData, selectedDocViewerIdx, dispatch]);
-
+    const Tooltip = ({ label, children }) => (
+        <span className="relative group inline-flex items-center">
+            {children}
+            <span className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:block z-50 whitespace-nowrap">
+                <span className="bg-gray-800 text-white text-[10px] font-medium px-2 py-1 rounded-md shadow-md">
+                    {label}
+                </span>
+            </span>
+        </span>
+    );
     return (
         <div className="min-w-0 w-full">
             <Breadcrumb crumbs={[{ label: "Dashboard", screen: "dashboard" }, { label: "Policy Checklist", screen: "checklist" }, { label: "Document" }]} />
@@ -92,7 +101,13 @@ const Documents = () => {
             <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
                 <div>
                     <h1 className="text-xl font-bold text-gray-800 tracking-tight">Document Viewer</h1>
-                    {policy && <p className="text-sm text-gray-400 mt-0.5">{policy.customer_name} · {policy.policy_number}</p>}
+                    {policy && (
+                        <p className="text-sm text-gray-400 mt-0.5">
+                            <Tooltip label="Customer Name">{policy.customer_name}</Tooltip>
+                            {" · "}
+                            <Tooltip label="Policy Number">{policy.policy_number}</Tooltip>
+                        </p>
+                    )}
                 </div>
                 <div className="flex gap-2">
                     <button

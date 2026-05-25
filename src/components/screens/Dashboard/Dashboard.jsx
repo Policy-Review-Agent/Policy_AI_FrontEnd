@@ -3,7 +3,7 @@ import { Layers, Clock, CheckCircle, AlertCircle, ArrowUp, ArrowDown, ArrowUpDow
 import Breadcrumb from "../../layout/Breadcrumb";
 import BatchCard from "./BatchCard";
 import { getDashboardStats, getDashboardList } from "../../api/apisCall";
-import { setDashboardStats, setDashboardList } from "../../../store/slices/batchSlice";
+import { setDashboardStats, setDashboardList,setRowsPerPage } from "../../../store/slices/batchSlice";
 import { useSelector, useDispatch } from "react-redux";
 import Pagination from "../Pagination/Pagination";
 import CustomDatePicker from "./CustomDatePicker";
@@ -57,11 +57,10 @@ const SortIcon = ({ field, sortField, sortDir }) => {
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 const Dashboard = () => {
     const dispatch = useDispatch();
-    const { dashboardStats, dashboardList } = useSelector((s) => s.batch);
+    const { dashboardStats, dashboardList,rowsPerPage  } = useSelector((s) => s.batch);
 
     const [loading, setLoading]         = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [searchTerm, setSearchTerm]   = useState("");
     const [sortField, setSortField]     = useState(null);
     const [sortDir, setSortDir]         = useState("asc");
@@ -168,7 +167,7 @@ const Dashboard = () => {
     );
 
     const handleRowsPerPageChange = (newRows) => {
-        setRowsPerPage(newRows);
+        dispatch(setRowsPerPage(newRows));
         setCurrentPage(1);
     };
 

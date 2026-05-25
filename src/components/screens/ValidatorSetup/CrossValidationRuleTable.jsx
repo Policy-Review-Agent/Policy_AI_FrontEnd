@@ -3,6 +3,7 @@ import { X, Check, ChevronDown, AlertTriangle, Pencil, Trash2, ArrowUp, ArrowDow
 import { useDispatch, useSelector } from "react-redux";
 import { setValidatorDocDetails, setPolicyExtractedFields } from "../../../store/slices/validatorSetupSlice";
 import { createValidatorCrossCheckDetails, updateValidatorCrossCheckDetails, deleteValidatorCrossCheckDetails, getValidatorDocDetails, getPolicyExtractedFields } from "../../api/validatorApiCall";
+import { isAction } from "@reduxjs/toolkit";
 
 const MATCH_TYPE_OPTIONS = [
     { value: "fuzzy", label: "Fuzzy Match" },
@@ -347,15 +348,15 @@ const MappingRow = ({ mapping, index, onChange, onRemove, allMappings }) => {
 };
 
 // ── RulePanel — form state reset via useLayoutEffect ─────────────────────────
-// useLayoutEffect runs synchronously before paint so React batches these
-// state updates in the same commit — no cascading renders, no linter warning.
+
 const RulePanel = ({ open, onClose, onSave, editRule, loading }) => {
     const isEdit = !!editRule;
     const { documentTypes, policyExtractedFields } = useSelector((state) => state.validatorSetup);
-    const defaultDocValue = documentTypes.map((d) => d.display_name) || "";
+    const defaultDocValue = documentTypes?.[0]?.name ?? "";
     const FIELD_OPTIONS = policyExtractedFields || [];
 
     const [form, setForm] = useState(() => {
+
         if (editRule) {
             const existing = editRule.field_mappings || editRule.mappings || [];
             return {
@@ -376,7 +377,29 @@ const RulePanel = ({ open, onClose, onSave, editRule, loading }) => {
             mappings: [{ document_type: defaultDocValue, field: FIELD_OPTIONS[0] || "" }],
         };
     });
-
+    useEffect(() => {
+        if (!open) return;
+        if (editRule) {
+            const existing = editRule.field_mappings || editRule.mappings || [];
+            setForm({
+                checkName: editRule.check_name || editRule.name || "",
+                description: editRule.description || "",
+                matchType: editRule.match_type || editRule.matchType || "fuzzy",
+                isActive: editRule.is_active ?? true,
+                mappings: existing.length
+                    ? existing.map((m, i) => ({ document_type: m.document_type || m.doc, field: m.field, isDocChanged: i === 0 }))
+                    : [{ document_type: defaultDocValue, field: "", isDocChanged: true }],
+            });
+        } else {
+            setForm({
+                checkName: "",
+                description: "",
+                matchType: "fuzzy",
+                isActive: true,
+                mappings: [{ document_type: defaultDocValue, field: "", isDocChanged: true }],
+            });
+        }
+    }, [open]);
     const [matchOpen, setMatchOpen] = useState(false);
     const matchRef = useRef(null);
 
@@ -387,23 +410,34 @@ const RulePanel = ({ open, onClose, onSave, editRule, loading }) => {
     }, []);
 
     const setField = (key, val) => setForm((f) => ({ ...f, [key]: val }));
-    const canSave = form.checkName.trim() !== "" && form.mappings.length > 0;
+    const canSave =
+        form.checkName.trim() !== "" &&
+        form.mappings.length > 0 &&
+        form.mappings.every(
+            (m) =>
+                !!m.document_type &&
+                typeof m.document_type === "string" &&
+                m.document_type.trim() !== "" &&
+                !!m.field &&
+                String(m.field).trim() !== ""
+        );
     const addMapping = () => setForm((f) => ({ ...f, mappings: [...f.mappings, { document_type: "", field: "", isDocChanged: false }] }));
     const removeMapping = (i) => setForm((f) => ({ ...f, mappings: f.mappings.filter((_, idx) => idx !== i) }));
     const updateMapping = (i, key, val) => setForm((f) => ({ ...f, mappings: f.mappings.map((m, idx) => idx === i ? { ...m, [key]: val } : m) }));
 
     const handleSave = () => {
         if (!canSave) return;
-        onSave({
-            id: editRule?.id,
-            payload: {
-                check_name: form.checkName,
-                description: form.description,
-                match_type: form.matchType,
-                is_active: form.isActive,
-                field_mappings: form.mappings.map((m) => ({ document_type: m.document_type || m.doc, field: m.field })),
-            },
-        });
+            onSave({
+                id: editRule?.id,
+
+                payload: {
+                    check_name: form.checkName,
+                    description: form.description,
+                    match_type: form.matchType,
+                    is_active: form.isActive,
+                    field_mappings: form.mappings.map((m) => ({ document_type: m.document_type || m.doc, field: m.field })),
+                },
+            });
     };
 
     const selectedLabel = MATCH_TYPE_OPTIONS.find((o) => o.value === form.matchType)?.label;
@@ -585,7 +619,7 @@ const CrossValidationRuleTable = () => {
             <Toast toasts={toasts} onClose={removeToast} />
             {confirmRule && <ConfirmDialog rule={confirmRule} onConfirm={handleDeleteConfirm} onCancel={() => setConfirmRule(null)} />}
             <RulePanel
-                key={panelOpen ? (editRule?.id ?? "new") : "closed"}
+                key={panelOpen ? (editRule?.id ?? "new") : "closed"}  // ✅ keep this
                 open={panelOpen}
                 onClose={closePanel}
                 onSave={handleSaveRule}
