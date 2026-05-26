@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { navigate } from "../../../store/slices/navigationSlice";
-import { selectCurrentPolicy, selectCurrentBatch, setChecklistSummary, setPolicyList, setPolicyCheckList, setDocumentData, } from "../../../store/slices/batchSlice";
+import { selectCurrentPolicy, selectCurrentBatch, setChecklistSummary, setPolicyList, setPolicyCheckList, setDocumentData, setPolicySummary, setPolicyValidated } from "../../../store/slices/batchSlice";
 import { setSelectedDocViewerIdx } from "../../../store/slices/validationSlice";
-import { getChecklistSummary, getPolicyList, getPolicyCheckList, getDocumentData, checkPolicyReviwed } from "../../api/apisCall";
+import { getChecklistSummary, getPolicyList, getPolicyCheckList, getDocumentData, checkPolicyReviwed, getPolicySummary } from "../../api/apisCall";
 import { ArrowLeft, ArrowUp, ArrowDown, ArrowUpDown, CheckCircle2, XCircle } from "lucide-react";
 import Breadcrumb from "../../layout/Breadcrumb";
 import ChecklistRow from "./ChecklistRow";
@@ -132,7 +132,8 @@ const PolicyChecklist = () => {
     const dispatch = useDispatch();
     const policy = useSelector(selectCurrentPolicy);
     const batch = useSelector(selectCurrentBatch);
-    const { checklistSummary, policyCheckList, policyList, selectedPolicyIdx, policySummary, policyAIStatus, policyvalidation } = useSelector((state) => state.batch);
+    const { checklistSummary, policyCheckList, policyList, selectedBatchId, selectedPolicyIdx, policySummary, policyAIStatus, policyvalidation, policyValidated } = useSelector((state) => state.batch);
+    console.log("policyValidated",policyValidated)
     const [loading, setLoading] = useState(true);
     const [sortDir, setSortDir] = useState(null);
     const [reviewing, setReviewing] = useState(false);
@@ -201,7 +202,7 @@ const PolicyChecklist = () => {
         setReviewing(true);
         try {
             const policyId = policyList[selectedPolicyIdx].policy_id;
-            await checkPolicyReviwed(policyId);
+            await checkPolicyReviwed(setPolicyValidated, dispatch, policyId);
             setTimeout(() => getPolicyList(setPolicyList, batch.batch_id, dispatch), 2000);
             setToast({ type: "success", title: "Marked as Reviewed", subtitle: "Policy has been successfully marked as reviewed." });
         } catch (err) {
@@ -253,7 +254,11 @@ const PolicyChecklist = () => {
                 </div>
                 <div className="flex gap-2">
                     <button
-                        onClick={() => dispatch(navigate("policyList"))}
+                        onClick={() => {
+                            dispatch(navigate("policyList"))
+                            getPolicySummary(setPolicySummary, selectedBatchId, dispatch);
+
+                        }}
                         className="flex items-center gap-1 text-xs font-semibold text-gray-500 border border-gray-200 bg-white hover:bg-gray-50 px-3 py-2 rounded-md transition"
                     >
                         <ArrowLeft size={12} /> Back
@@ -305,7 +310,7 @@ const PolicyChecklist = () => {
                     <div className="flex gap-2">
 
                         {/* ── Reviewed button with loader ── */}
-                        {policySummary?.status === "in_review" && policyAIStatus === "complete" && policyvalidation === "in_review" && (
+                        {policySummary?.status === "in_review" && policyAIStatus === "complete" && policyvalidation === "in_review" && policyValidated?.validation_status !== "validated" && (
                             <button
                                 onClick={handleCheckReviwed}
                                 disabled={reviewing}

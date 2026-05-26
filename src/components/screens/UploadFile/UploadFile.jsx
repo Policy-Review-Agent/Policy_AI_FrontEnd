@@ -68,9 +68,7 @@ const UploadFile = () => {
 
                 setTimeout(() => {
                     dispatch(navigate("dashboard"));
-                    getDashboardStats(setDashboardStats, dispatch)
-                    getDashboardList(setDashboardList, dispatch)
-                }, 2000); // wait 2s for toast to show then navigate
+                }, 2000);
             } else {
                 const errMsg = response?.data?.message || "Upload failed. Please try again.";
                 showToast("error", errMsg);

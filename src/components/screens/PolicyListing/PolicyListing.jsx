@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { selectPolicy } from "../../../store/slices/batchSlice";
 import { navigate } from "../../../store/slices/navigationSlice";
 import { ArrowRight, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import Breadcrumb from "../../layout/Breadcrumb";
-import { setPolicyCheckList, setpolicyAIStatus, setpolicyValidation, setPolicyRowPerPage } from "../../../store/slices/batchSlice";
+import { setPolicyCheckList, setpolicyAIStatus, setpolicyValidation, setPolicyRowPerPage, setPolicyValidated } from "../../../store/slices/batchSlice";
 import { getPolicyCheckList } from "../../api/apisCall";
 import Pagination from "../Pagination/Pagination";
 
@@ -138,6 +138,9 @@ const PolicyListing = () => {
             </span>
         </span>
     );
+    useEffect(() => {
+        dispatch(setPolicyValidated(""))
+    }, [])
     return (
         <div className="min-w-0 w-full">
             <Breadcrumb crumbs={[{ label: "Dashboard", screen: "dashboard" }, { label: "Policy List" }]} />
