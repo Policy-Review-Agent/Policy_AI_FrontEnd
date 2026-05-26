@@ -126,12 +126,14 @@ export const UploadCSVFile = async (file) => {
     }
 };
 
-export const checkPolicyReviwed = async (id) => {
+export const checkPolicyReviwed = async (setPolicyValidated, dispatch, id) => {
     try {
         const response = await postApi(`/api/frontend/policies/${id}/mark-reviewed/`, {
             policy_id: id
         })
-        return { data: response.data, error: null };
+        if (response?.data?.data) {
+            dispatch(setPolicyValidated(response?.data?.data || []))
+        }
     } catch (error) {
         console.log("Error File Uploading:", error);
         return { data: null, error: error.message };

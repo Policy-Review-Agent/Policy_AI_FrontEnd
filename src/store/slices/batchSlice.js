@@ -18,6 +18,7 @@ const batchSlice = createSlice({
     policyvalidation: sessionStorage.getItem("policy_validation") || "",
     rowsPerPage: 10,
     policyRowPerPage: 10,
+    policyValidated: {}
   },
   reducers: {
     selectBatch: (state, action) => {
@@ -75,6 +76,9 @@ const batchSlice = createSlice({
     setPolicyRowPerPage: (state, action) => {
       state.policyRowPerPage = action.payload;
     },
+    setPolicyValidated: (state, action) => {
+      state.policyValidated = action.payload;
+    }
   },
 });
 
@@ -94,6 +98,7 @@ export const {
   resetPolicyList,
   setRowsPerPage,
   setPolicyRowPerPage,
+  setPolicyValidated,
 } = batchSlice.actions;
 
 export const selectCurrentBatch = (s) =>

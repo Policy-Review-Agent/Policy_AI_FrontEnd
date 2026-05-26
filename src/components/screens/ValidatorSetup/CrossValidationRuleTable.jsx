@@ -677,15 +677,15 @@ const CrossValidationRuleTable = () => {
                             ) : sortedDocs.length > 0 ? (
                                 sortedDocs.map((rule) => (
                                     <tr key={rule.id} className="hover:bg-gray-50 transition-colors align-top">
-                                        <td className="px-5 py-4 w-[180px]"><span className="text-[12px] font-bold text-gray-800 font-mono break-all">{rule.check_name || rule.name}</span></td>
-                                        <td className="px-5 py-4 w-[200px]"><p className="text-[12px] text-gray-400 font-medium leading-relaxed">{rule.description}</p></td>
+                                        <td className="px-5 py-4 w-[180px]"><span className="text-[12px] font-bold text-gray-800 font-mono break-all">{rule.check_name || rule.name || "-"}</span></td>
+                                        <td className="px-5 py-4 w-[200px]"><p className="text-[12px] text-gray-400 font-medium leading-relaxed">{rule.description || "-"}</p></td>
                                         <td className="px-5 py-4 w-[120px]">
                                             <span className={`text-[11px] font-semibold px-3 py-1 rounded-full border ${MATCH_TYPE_STYLES[rule.match_type || rule.matchType] || "bg-gray-100 text-gray-500 border-gray-200"}`}>
-                                                {rule.match_type || rule.matchType}
+                                                {rule.match_type || rule.matchType || "-"}
                                             </span>
                                         </td>
                                         <td className="px-5 py-4"><MappingsList rule={rule} /></td>
-                                        <td className="px-5 py-4 w-[120px]"><StatusBadge isActive={rule.is_active} /></td>
+                                        <td className="px-5 py-4 w-[120px]"><StatusBadge isActive={rule.is_active } /></td>
                                         <td className="px-5 py-4 w-[100px]">
                                             <div className="flex items-center gap-2">
                                                 <button onClick={() => { openEdit(rule); getPolicyExtractedFields(rule.field_mappings[0]?.document_type, dispatch, setPolicyExtractedFields); }}
@@ -712,16 +712,16 @@ const CrossValidationRuleTable = () => {
                     sortedDocs.map((rule) => (
                         <div key={rule.id} className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex flex-col gap-3">
                             <div className="flex items-start justify-between gap-2">
-                                <span className="text-[12px] font-bold text-gray-800 font-mono break-all flex-1">{rule.check_name || rule.name}</span>
+                                <span className="text-[12px] font-bold text-gray-800 font-mono break-all flex-1">{rule.check_name || rule.name || "-"}</span>
                                 <div className="flex items-center gap-1.5 flex-shrink-0">
                                     <button onClick={() => openEdit(rule)} className="p-1.5 rounded-md border border-gray-200 text-gray-400 hover:text-indigo-500 hover:border-indigo-200 transition-colors"><Pencil size={13} /></button>
                                     <button onClick={(e) => handleDeleteClick(e, rule)} className="p-1.5 rounded-md border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors"><Trash2 size={13} /></button>
                                 </div>
                             </div>
-                            <p className="text-[12px] text-gray-500 leading-relaxed">{rule.description}</p>
+                            <p className="text-[12px] text-gray-500 leading-relaxed">{rule.description || "-"}</p>
                             <div className="flex items-center gap-2 flex-wrap">
                                 <span className={`text-[11px] font-semibold px-3 py-1 rounded-full border ${MATCH_TYPE_STYLES[rule.match_type || rule.matchType] || "bg-gray-100 text-gray-500 border-gray-200"}`}>{rule.match_type || rule.matchType}</span>
-                                <StatusBadge isActive={rule.is_active} />
+                                <StatusBadge isActive={rule.is_active || "-"} />
                             </div>
                             <div>
                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Field Mappings</p>

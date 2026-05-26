@@ -3,24 +3,24 @@ import { Layers, Clock, CheckCircle, AlertCircle, ArrowUp, ArrowDown, ArrowUpDow
 import Breadcrumb from "../../layout/Breadcrumb";
 import BatchCard from "./BatchCard";
 import { getDashboardStats, getDashboardList } from "../../api/apisCall";
-import { setDashboardStats, setDashboardList,setRowsPerPage } from "../../../store/slices/batchSlice";
+import { setDashboardStats, setDashboardList, setRowsPerPage } from "../../../store/slices/batchSlice";
 import { useSelector, useDispatch } from "react-redux";
 import Pagination from "../Pagination/Pagination";
 import CustomDatePicker from "./CustomDatePicker";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const STATS_CONFIG = [
-    { key: "total_batches",   label: "Total Batches",    sub: "All time",          icon: Layers,      color: "bg-blue-50 text-blue-600"   },
-    { key: "in_progress",     label: "In Progress",      sub: "Being processed",   icon: Clock,       color: "bg-amber-50 text-amber-500"  },
-    { key: "completed",       label: "Completed",        sub: "All policies done", icon: CheckCircle, color: "bg-green-50 text-green-500"  },
-    { key: "needs_attention", label: "Needs Attention",  sub: "Issues found",      icon: AlertCircle, color: "bg-red-50 text-red-500"      },
+    { key: "total_batches", label: "Total Batches", sub: "All time", icon: Layers, color: "bg-blue-50 text-blue-600" },
+    { key: "in_progress", label: "In Progress", sub: "Being processed", icon: Clock, color: "bg-amber-50 text-amber-500" },
+    { key: "completed", label: "Completed", sub: "All policies done", icon: CheckCircle, color: "bg-green-50 text-green-500" },
+    { key: "needs_attention", label: "Needs Attention", sub: "Issues found", icon: AlertCircle, color: "bg-red-50 text-red-500" },
 ];
 
 const TABLE_HEADS = ["Batch ID", "Batch Date", "Total", "Ready For Review", "Reviewed", "Status", "Action"];
 
 const SORT_KEYS = {
     "Batch Date": "batch_date",
-    "Total":      "total_policies",
+    "Total": "total_policies",
 };
 
 // ─── Skeleton Loaders ─────────────────────────────────────────────────────────
@@ -50,36 +50,36 @@ const SkeletonStatCard = () => (
 const SortIcon = ({ field, sortField, sortDir }) => {
     if (sortField !== field) return <ArrowUpDown size={11} className="text-gray-500 ms-1 inline" />;
     return sortDir === "asc"
-        ? <ArrowUp   size={11} className="text-indigo-500 ms-1 inline" />
+        ? <ArrowUp size={11} className="text-indigo-500 ms-1 inline" />
         : <ArrowDown size={11} className="text-indigo-500 ms-1 inline" />;
 };
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 const Dashboard = () => {
     const dispatch = useDispatch();
-    const { dashboardStats, dashboardList,rowsPerPage  } = useSelector((s) => s.batch);
+    const { dashboardStats, dashboardList, rowsPerPage } = useSelector((s) => s.batch);
 
-    const [loading, setLoading]         = useState(true);
+    const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
-    const [searchTerm, setSearchTerm]   = useState("");
-    const [sortField, setSortField]     = useState(null);
-    const [sortDir, setSortDir]         = useState("asc");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [sortField, setSortField] = useState(null);
+    const [sortDir, setSortDir] = useState("asc");
 
     // Date range filter state
     const [dateStart, setDateStart] = useState(null); // Date | null
-    const [dateEnd, setDateEnd]     = useState(null); // Date | null
+    const [dateEnd, setDateEnd] = useState(null); // Date | null
 
     const stats = {
-        total_batches:   dashboardStats?.total_batches   || 0,
-        in_progress:     dashboardStats?.in_progress     || 0,
-        completed:       dashboardStats?.completed       || 0,
+        total_batches: dashboardStats?.total_batches || 0,
+        in_progress: dashboardStats?.in_progress || 0,
+        completed: dashboardStats?.completed || 0,
         needs_attention: dashboardStats?.needs_attention || 0,
     };
 
     // ── Fetch + Poll ──
     useEffect(() => {
         const fetchDashboardData = async () => {
-            setLoading(true);
+            // setLoading(true);
             await Promise.all([
                 getDashboardStats(setDashboardStats, dispatch),
                 getDashboardList(setDashboardList, dispatch),
@@ -87,15 +87,15 @@ const Dashboard = () => {
             setLoading(false);
             setCurrentPage(1);
         };
-        fetchDashboardData();
+        fetchDashboardData(); 
+        const retryId = setTimeout(fetchDashboardData, 5000); 
+        const intervalId = setInterval(fetchDashboardData, 30000);
 
-        const intervalId = setInterval(() => {
-            getDashboardStats(setDashboardStats, dispatch);
-            getDashboardList(setDashboardList, dispatch);
-        }, 30000);
-
-        return () => clearInterval(intervalId);
-    }, [dispatch]);
+        return () => {
+            clearTimeout(retryId);
+            clearInterval(intervalId);
+        };
+    }, []);
 
     // ── Sort handler ──
     const handleSort = (field) => {
@@ -156,7 +156,7 @@ const Dashboard = () => {
         if (!key) return 0;
         const aVal = a[key] ?? "";
         const bVal = b[key] ?? "";
-        const cmp  = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
+        const cmp = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
         return sortDir === "asc" ? cmp : -cmp;
     });
 
@@ -174,8 +174,8 @@ const Dashboard = () => {
     // ── Compute per-date serial numbers ──
     const paginatedListWithSerial = paginatedList.map((batch) => {
         const batchDateOnly = batch.batch_date?.slice(0, 10);
-        const sameDate      = sortedData.filter((b) => b.batch_date?.slice(0, 10) === batchDateOnly);
-        const serial        = sameDate.findIndex((b) => b.batch_id === batch.batch_id) + 1;
+        const sameDate = sortedData.filter((b) => b.batch_date?.slice(0, 10) === batchDateOnly);
+        const serial = sameDate.findIndex((b) => b.batch_id === batch.batch_id) + 1;
         return { ...batch, serial };
     });
 
@@ -267,11 +267,10 @@ const Dashboard = () => {
                                         <th
                                             key={h}
                                             onClick={() => isSortable && handleSort(h)}
-                                            className={`text-[11px] font-semibold uppercase tracking-wider px-3 py-2.5 border-b border-gray-100 whitespace-nowrap select-none transition-colors ${
-                                                isSortable
+                                            className={`text-[11px] font-semibold uppercase tracking-wider px-3 py-2.5 border-b border-gray-100 whitespace-nowrap select-none transition-colors ${isSortable
                                                     ? "cursor-pointer hover:bg-gray-100 hover:text-gray-600"
                                                     : "cursor-default"
-                                            } ${sortField === h ? "text-indigo-500" : "text-gray-800"}`}
+                                                } ${sortField === h ? "text-indigo-500" : "text-gray-800"}`}
                                         >
                                             {h}
                                             {isSortable && (
