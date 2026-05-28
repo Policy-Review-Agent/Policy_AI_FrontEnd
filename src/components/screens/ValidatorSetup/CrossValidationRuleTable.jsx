@@ -166,12 +166,12 @@ const Toggle = ({ checked, onChange }) => (
     </button>
 );
 
-const CustomDropdown = ({ value, options = [], onChange, disabled = false }) => {
+const CustomDropdown = ({ value, options = [], onChange, disabled = false, placeholder = "Select" }) => {
     const [open, setOpen] = useState(false);
     const [openUpward, setOpenUpward] = useState(false);
     const ref = useRef(null);
     const normalised = options.map((o) => typeof o === "string" ? { label: o, value: o } : o);
-    const selectedLabel = normalised.find((o) => o.value === value)?.label ?? value;
+    const selectedLabel = normalised.find((o) => o.value === value)?.label;
 
     useEffect(() => {
         const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -190,15 +190,30 @@ const CustomDropdown = ({ value, options = [], onChange, disabled = false }) => 
 
     return (
         <div ref={ref} className="relative flex-1 min-w-0">
-            <div onClick={handleToggle} className={`flex items-center justify-between border border-gray-200 rounded-lg px-2.5 py-2 text-[12px] ${disabled ? "bg-gray-100 cursor-not-allowed text-gray-400" : "bg-white cursor-pointer hover:border-[#6B55E8]"}`}>
-                <span className="truncate">{selectedLabel || "Select"}</span>
-                <ChevronDown size={14} className={`ml-1 transition-transform ${open ? "rotate-180" : ""} ${disabled ? "text-gray-300" : "text-gray-400"}`} />
+            <div
+                onClick={handleToggle}
+                className={`flex items-center justify-between border border-gray-200 rounded-lg px-2.5 py-2 text-[12px] ${
+                    disabled ? "bg-gray-100 cursor-not-allowed text-gray-400" : "bg-white cursor-pointer hover:border-[#6B55E8]"
+                }`}
+            >
+                <span className={`truncate ${!selectedLabel ? "text-gray-400" : "text-gray-700"}`}>
+                    {selectedLabel || placeholder}
+                </span>
+                <ChevronDown
+                    size={14}
+                    className={`ml-1 transition-transform ${open ? "rotate-180" : ""} ${disabled ? "text-gray-300" : "text-gray-400"}`}
+                />
             </div>
             {open && !disabled && (
                 <div className={`absolute left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-40 overflow-y-auto ${openUpward ? "bottom-full mb-1" : "top-full mt-1"}`}>
                     {normalised.map((item) => (
-                        <div key={item.value} onClick={() => { onChange(item.value); setOpen(false); }}
-                            className={`px-3 py-2 text-[12px] cursor-pointer flex justify-between ${value === item.value ? "bg-indigo-50 text-indigo-600 font-semibold" : "text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"}`}>
+                        <div
+                            key={item.value}
+                            onClick={() => { onChange(item.value); setOpen(false); }}
+                            className={`px-3 py-2 text-[12px] cursor-pointer flex justify-between ${
+                                value === item.value ? "bg-indigo-50 text-indigo-600 font-semibold" : "text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
+                            }`}
+                        >
                             <span>{item.label}</span>
                             {value === item.value && <Check size={12} className="text-indigo-500" />}
                         </div>
@@ -284,14 +299,13 @@ const MappingRow = ({ mapping, index, onChange, onRemove, allMappings }) => {
     const { documentTypes, policyExtractedFields } = useSelector((state) => state.validatorSetup);
     const docOptions = documentTypes?.map((d) => ({ label: d.display_name, value: d.name })) || [];
     const FIELD_OPTIONS = policyExtractedFields || [];
-    const defaultDocValue = docOptions[0]?.value ?? "";
-    const isFieldDisabled = index === 0 ? false : !mapping.isDocChanged;
+    const isFieldDisabled = !mapping.isDocChanged;
 
     // ── Hide fields already selected in OTHER rows for the SAME document ─────
-    const currentDoc = mapping.document_type || defaultDocValue;
+    const currentDoc = mapping.document_type;
 
     const usedFieldsForDoc = allMappings
-        .filter((m, idx) => idx !== index && (m.document_type || defaultDocValue) === currentDoc)
+        .filter((m, idx) => idx !== index && m.document_type === currentDoc)
         .map((m) => m.field)
         .filter(Boolean);
 
@@ -305,31 +319,33 @@ const MappingRow = ({ mapping, index, onChange, onRemove, allMappings }) => {
             <div className="grid grid-cols-[1fr_auto_1fr_auto] items-center mb-2">
                 <p className="text-[10px] font-bold text-gray-400 uppercase">Document</p>
                 <div />
-                <p className="text-[10px] font-bold text-gray-400 uppercase">Field</p>
+                <p className="text-[10px] font-bold text-gray-400 ms-5 uppercase">Field</p>
                 <button onClick={() => onRemove(index)} className="p-1 border border-red-200 text-red-400 rounded">
                     <X size={10} />
                 </button>
             </div>
             <div className="grid grid-cols-[1fr_auto_1fr] gap-1 items-center">
-                {/* Document dropdown — all options shown, no filtering */}
+                {/* Document dropdown */}
                 <CustomDropdown
-                    value={mapping.document_type || defaultDocValue}
+                    value={mapping.document_type || ""}
                     options={docOptions}
+                    placeholder="Select document"
                     onChange={(val) => {
                         onChange(index, "document_type", val);
                         onChange(index, "isDocChanged", true);
-                        onChange(index, "field", ""); // reset field when doc changes
+                        onChange(index, "field", "");
                         getPolicyExtractedFields(val, dispatch, setPolicyExtractedFields);
                     }}
                 />
 
                 <span className="text-gray-400 text-xs text-center">→</span>
 
-                {/* Field dropdown — already-used fields for this doc are hidden */}
+                {/* Field dropdown */}
                 <div className="relative group w-full">
                     <CustomDropdown
                         value={mapping.field || ""}
                         options={availableFieldOptions}
+                        placeholder="Select field"
                         onChange={(val) => onChange(index, "field", val)}
                         disabled={isFieldDisabled}
                     />
@@ -346,7 +362,6 @@ const MappingRow = ({ mapping, index, onChange, onRemove, allMappings }) => {
         </div>
     );
 };
-
 // ── RulePanel — form state reset via useLayoutEffect ─────────────────────────
 
 const RulePanel = ({ open, onClose, onSave, editRule, loading }) => {
@@ -355,28 +370,14 @@ const RulePanel = ({ open, onClose, onSave, editRule, loading }) => {
     const defaultDocValue = documentTypes?.[0]?.name ?? "";
     const FIELD_OPTIONS = policyExtractedFields || [];
 
-    const [form, setForm] = useState(() => {
-
-        if (editRule) {
-            const existing = editRule.field_mappings || editRule.mappings || [];
-            return {
-                checkName: editRule.check_name || editRule.name || "",
-                description: editRule.description || "",
-                matchType: editRule.match_type || editRule.matchType || "fuzzy",
-                isActive: editRule.is_active ?? true,
-                mappings: existing.length
-                    ? existing.map((m, i) => ({ document_type: m.document_type || m.doc, field: m.field, isDocChanged: i === 0 }))
-                    : [{ document_type: defaultDocValue, field: "", isDocChanged: true }],
-            };
-        }
-        return {
-            checkName: "",
-            description: "",
-            matchType: "fuzzy",
-            isActive: true,
-            mappings: [{ document_type: defaultDocValue, field: FIELD_OPTIONS[0] || "" }],
-        };
+    const [form, setForm] = useState({
+        checkName: "",
+        description: "",
+        matchType: "fuzzy",
+        isActive: true,
+        mappings: [{ document_type: "", field: "", isDocChanged: false }],
     });
+
     useEffect(() => {
         if (!open) return;
         if (editRule) {
@@ -387,8 +388,12 @@ const RulePanel = ({ open, onClose, onSave, editRule, loading }) => {
                 matchType: editRule.match_type || editRule.matchType || "fuzzy",
                 isActive: editRule.is_active ?? true,
                 mappings: existing.length
-                    ? existing.map((m, i) => ({ document_type: m.document_type || m.doc, field: m.field, isDocChanged: i === 0 }))
-                    : [{ document_type: defaultDocValue, field: "", isDocChanged: true }],
+                    ? existing.map((m) => ({
+                        document_type: m.document_type || m.doc,
+                        field: m.field,
+                        isDocChanged: true,   // ← already has doc, so field enabled
+                    }))
+                    : [{ document_type: defaultDocValue, field: "", isDocChanged: false }],
             });
         } else {
             setForm({
@@ -396,10 +401,11 @@ const RulePanel = ({ open, onClose, onSave, editRule, loading }) => {
                 description: "",
                 matchType: "fuzzy",
                 isActive: true,
-                mappings: [{ document_type: defaultDocValue, field: "", isDocChanged: true }],
+                mappings: [{ document_type: "", field: "", isDocChanged: false }],  // ← field disabled until doc selected
             });
         }
     }, [open]);
+
     const [matchOpen, setMatchOpen] = useState(false);
     const matchRef = useRef(null);
 
@@ -410,6 +416,7 @@ const RulePanel = ({ open, onClose, onSave, editRule, loading }) => {
     }, []);
 
     const setField = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+
     const canSave =
         form.checkName.trim() !== "" &&
         form.mappings.length > 0 &&
@@ -421,23 +428,37 @@ const RulePanel = ({ open, onClose, onSave, editRule, loading }) => {
                 !!m.field &&
                 String(m.field).trim() !== ""
         );
-    const addMapping = () => setForm((f) => ({ ...f, mappings: [...f.mappings, { document_type: "", field: "", isDocChanged: false }] }));
-    const removeMapping = (i) => setForm((f) => ({ ...f, mappings: f.mappings.filter((_, idx) => idx !== i) }));
-    const updateMapping = (i, key, val) => setForm((f) => ({ ...f, mappings: f.mappings.map((m, idx) => idx === i ? { ...m, [key]: val } : m) }));
+
+    const addMapping = () => setForm((f) => ({
+        ...f,
+        mappings: [...f.mappings, { document_type: "", field: "", isDocChanged: false }],  // ← false
+    }));
+
+    const removeMapping = (i) => setForm((f) => ({
+        ...f,
+        mappings: f.mappings.filter((_, idx) => idx !== i),
+    }));
+
+    const updateMapping = (i, key, val) => setForm((f) => ({
+        ...f,
+        mappings: f.mappings.map((m, idx) => idx === i ? { ...m, [key]: val } : m),
+    }));
 
     const handleSave = () => {
         if (!canSave) return;
-            onSave({
-                id: editRule?.id,
-
-                payload: {
-                    check_name: form.checkName,
-                    description: form.description,
-                    match_type: form.matchType,
-                    is_active: form.isActive,
-                    field_mappings: form.mappings.map((m) => ({ document_type: m.document_type || m.doc, field: m.field })),
-                },
-            });
+        onSave({
+            id: editRule?.id,
+            payload: {
+                check_name: form.checkName,
+                description: form.description,
+                match_type: form.matchType,
+                is_active: form.isActive,
+                field_mappings: form.mappings.map((m) => ({
+                    document_type: m.document_type || m.doc,
+                    field: m.field,
+                })),
+            },
+        });
     };
 
     const selectedLabel = MATCH_TYPE_OPTIONS.find((o) => o.value === form.matchType)?.label;
@@ -461,30 +482,42 @@ const RulePanel = ({ open, onClose, onSave, editRule, loading }) => {
                         <label className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /> Check Name
                         </label>
-                        <input value={form.checkName} onChange={(e) => setField("checkName", e.target.value)}
+                        <input
+                            value={form.checkName}
+                            onChange={(e) => setField("checkName", e.target.value)}
                             placeholder="e.g. insured_name_consistent"
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] font-mono text-gray-700 bg-gray-50 outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-300" />
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] font-mono text-gray-700 bg-gray-50 outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-300"
+                        />
                     </div>
 
                     <div>
                         <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 block">Description</label>
-                        <textarea value={form.description} onChange={(e) => setField("description", e.target.value)}
-                            rows={3} placeholder="Describe what this rule checks..."
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] text-gray-700 resize-none outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-300" />
+                        <textarea
+                            value={form.description}
+                            onChange={(e) => setField("description", e.target.value)}
+                            rows={3}
+                            placeholder="Describe what this rule checks..."
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] text-gray-700 resize-none outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-300"
+                        />
                     </div>
 
                     <div ref={matchRef} className="relative">
                         <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 block">Match Type</label>
-                        <div onClick={() => setMatchOpen((o) => !o)}
-                            className="cursor-pointer border border-gray-200 rounded-lg px-3 py-2 text-[13px] bg-gray-50 flex items-center justify-between hover:border-[#6B55E8] transition-colors">
+                        <div
+                            onClick={() => setMatchOpen((o) => !o)}
+                            className="cursor-pointer border border-gray-200 rounded-lg px-3 py-2 text-[13px] bg-gray-50 flex items-center justify-between hover:border-[#6B55E8] transition-colors"
+                        >
                             <span className="text-gray-700">{selectedLabel}</span>
                             <ChevronDown size={14} className={`text-gray-400 transition-transform ${matchOpen ? "rotate-180" : ""}`} />
                         </div>
                         {matchOpen && (
                             <div className="absolute left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                                 {MATCH_TYPE_OPTIONS.map((o) => (
-                                    <div key={o.value} onClick={() => { setField("matchType", o.value); setMatchOpen(false); }}
-                                        className={`px-3 py-2 text-[13px] cursor-pointer flex items-center justify-between hover:bg-indigo-50 hover:text-indigo-600 transition-colors ${form.matchType === o.value ? "bg-indigo-50 text-indigo-600 font-semibold" : "text-gray-700"}`}>
+                                    <div
+                                        key={o.value}
+                                        onClick={() => { setField("matchType", o.value); setMatchOpen(false); }}
+                                        className={`px-3 py-2 text-[13px] cursor-pointer flex items-center justify-between hover:bg-indigo-50 hover:text-indigo-600 transition-colors ${form.matchType === o.value ? "bg-indigo-50 text-indigo-600 font-semibold" : "text-gray-700"}`}
+                                    >
                                         <span>{o.label}</span>
                                         {form.matchType === o.value && <Check size={13} className="text-indigo-500" />}
                                     </div>
@@ -534,8 +567,11 @@ const RulePanel = ({ open, onClose, onSave, editRule, loading }) => {
                     <button onClick={onClose} className="text-[13px] font-semibold text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 px-5 py-2 rounded-lg transition-all">
                         Cancel
                     </button>
-                    <button onClick={handleSave} disabled={!canSave || loading}
-                        className={`flex items-center gap-2 text-[13px] font-semibold px-5 py-2 rounded-lg transition-all ${canSave && !loading ? "text-white bg-[#6B55E8] hover:bg-[#5a45d4]" : "text-white bg-gray-300 cursor-not-allowed opacity-60"}`}>
+                    <button
+                        onClick={handleSave}
+                        disabled={!canSave || loading}
+                        className={`flex items-center gap-2 text-[13px] font-semibold px-5 py-2 rounded-lg transition-all ${canSave && !loading ? "text-white bg-[#6B55E8] hover:bg-[#5a45d4]" : "text-white bg-gray-300 cursor-not-allowed opacity-60"}`}
+                    >
                         <Check size={13} /> {loading ? "Saving..." : isEdit ? "Update Rule" : "Save Rule"}
                     </button>
                 </div>
@@ -685,7 +721,7 @@ const CrossValidationRuleTable = () => {
                                             </span>
                                         </td>
                                         <td className="px-5 py-4"><MappingsList rule={rule} /></td>
-                                        <td className="px-5 py-4 w-[120px]"><StatusBadge isActive={rule.is_active } /></td>
+                                        <td className="px-5 py-4 w-[120px]"><StatusBadge isActive={rule.is_active} /></td>
                                         <td className="px-5 py-4 w-[100px]">
                                             <div className="flex items-center gap-2">
                                                 <button onClick={() => { openEdit(rule); getPolicyExtractedFields(rule.field_mappings[0]?.document_type, dispatch, setPolicyExtractedFields); }}

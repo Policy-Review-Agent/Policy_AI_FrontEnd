@@ -5,7 +5,7 @@ import {
     setZoom2,
 } from "../../../store/slices/validationSlice";
 import { navigate } from "../../../store/slices/navigationSlice";
-import { selectCurrentPolicy, setDocumentData, setPolicyCheckList } from "../../../store/slices/batchSlice";
+import { selectCurrentPolicy, setDocumentData, setPolicyCheckList, resetDocumentData } from "../../../store/slices/batchSlice";
 import { getDocumentData, getPolicyCheckList } from "../../api/apisCall";
 // import { docChecklist } from "../../../data/checklist";
 import { ArrowLeft } from "lucide-react";
@@ -46,6 +46,7 @@ const Documents = () => {
         const selectedDoc = activeList[idx];
         const checklistItemId = selectedDoc?.id || selectedDoc?.checklist_item_id || selectedDoc?.checklist_id;
         if (checklistItemId && policy?.policy_id) {
+            dispatch(resetDocumentData());  // ← clear stale data immediately
             lastFetchedRef.current = String(checklistItemId);
             getDocumentData(setDocumentData, policy.policy_id, dispatch, checklistItemId);
         }
@@ -62,28 +63,28 @@ const Documents = () => {
     }, [policy?.policy_id, dispatch]);
 
     // Auto-fetch first document data on mount or when policy/list becomes available
+
     useEffect(() => {
-        // ONLY trigger if we have a real checklist from the API (not the static docChecklist)
         if (policy?.policy_id && policyCheckList.length > 0) {
             const currentDoc = policyCheckList[selectedDocViewerIdx];
             const checklistItemId = currentDoc?.id || currentDoc?.checklist_item_id || currentDoc?.checklist_id;
 
             const fetchedId = isApiDataObject ? (documentData?.selected_document?.checklist_item_id || documentData?.selected_document?.id) : null;
-
             const fetchedIdStr = fetchedId ? String(fetchedId) : null;
             const checklistItemIdStr = checklistItemId ? String(checklistItemId) : null;
             const isStale = isApiDataObject && fetchedIdStr !== checklistItemIdStr;
             const hasRequested = lastFetchedRef.current === checklistItemIdStr;
 
-            // If documentData is NOT yet an API object with details, or it's stale, fetch it just once
             if ((!isApiDataObject || isStale) && !hasRequested) {
                 if (checklistItemId) {
+                    dispatch(resetDocumentData());  // ← clear stale data
                     lastFetchedRef.current = checklistItemIdStr;
                     getDocumentData(setDocumentData, policy.policy_id, dispatch, checklistItemId);
                 }
             }
         }
     }, [policy?.policy_id, policyCheckList, isApiDataObject, documentData, selectedDocViewerIdx, dispatch]);
+    
     const Tooltip = ({ label, children }) => (
         <span className="relative group inline-flex items-center">
             {children}

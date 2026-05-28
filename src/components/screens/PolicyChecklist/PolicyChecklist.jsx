@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { navigate } from "../../../store/slices/navigationSlice";
-import { selectCurrentPolicy, selectCurrentBatch, setChecklistSummary, setPolicyList, setPolicyCheckList, setDocumentData, setPolicySummary, setPolicyValidated } from "../../../store/slices/batchSlice";
+import { selectCurrentPolicy, selectCurrentBatch, setChecklistSummary, setPolicyList, setPolicyCheckList, setDocumentData, setPolicySummary, setPolicyValidated, resetPolicyCheckList } from "../../../store/slices/batchSlice";
 import { setSelectedDocViewerIdx } from "../../../store/slices/validationSlice";
 import { getChecklistSummary, getPolicyList, getPolicyCheckList, getDocumentData, checkPolicyReviwed, getPolicySummary } from "../../api/apisCall";
 import { ArrowLeft, ArrowUp, ArrowDown, ArrowUpDown, CheckCircle2, XCircle } from "lucide-react";
@@ -133,8 +133,9 @@ const PolicyChecklist = () => {
     const policy = useSelector(selectCurrentPolicy);
     const batch = useSelector(selectCurrentBatch);
     const { checklistSummary, policyCheckList, policyList, selectedBatchId, selectedPolicyIdx, policySummary, policyAIStatus, policyvalidation, policyValidated } = useSelector((state) => state.batch);
-    console.log("policyValidated",policyValidated)
-    const [loading, setLoading] = useState(true);
+    // console.log("policyValidated", policyValidated)
+    // const [loading, setLoading] = useState(true);
+    const loading = policyCheckList === null;
     const [sortDir, setSortDir] = useState(null);
     const [reviewing, setReviewing] = useState(false);
     const [toast, setToast] = useState(null);
@@ -145,20 +146,19 @@ const PolicyChecklist = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            setLoading(true);
+            dispatch(resetPolicyCheckList()); // ← clears stale data immediately → loader shows
             try {
-                if (batch?.batch_id && !policy) {
-                    await getPolicyList(setPolicyList, batch.batch_id, dispatch);
-                }
-                if (policy.policy_id) {
+                // if (batch?.batch_id && !policy) {
+                //     await getPolicyList(setPolicyList, batch.batch_id, dispatch);
+                // }
+                if (policy?.policy_id) {
                     const idStr = policy.policy_id;
                     await getChecklistSummary(setChecklistSummary, idStr, dispatch);
                     await getPolicyCheckList(setPolicyCheckList, idStr, dispatch);
                 }
             } catch (error) {
                 console.error("Error in API calls:", error);
-            } finally {
-                setLoading(false);
+                dispatch(setPolicyCheckList([])); // ← fallback so loader doesn't hang
             }
         };
         fetchData();
@@ -203,7 +203,7 @@ const PolicyChecklist = () => {
         try {
             const policyId = policyList[selectedPolicyIdx].policy_id;
             await checkPolicyReviwed(setPolicyValidated, dispatch, policyId);
-            setTimeout(() => getPolicyList(setPolicyList, batch.batch_id, dispatch), 2000);
+            // setTimeout(() => getPolicyList(setPolicyList, batch.batch_id, dispatch), 2000);
             setToast({ type: "success", title: "Marked as Reviewed", subtitle: "Policy has been successfully marked as reviewed." });
         } catch (err) {
             setToast({ type: "error", title: "Review Failed", subtitle: "Something went wrong. Please try again." });
@@ -230,6 +230,7 @@ const PolicyChecklist = () => {
                     { label: `${policy?.policy_number} – ${policy?.customer_name}` },
                 ]}
             />
+           
 
             <Toast toast={toast} onClose={() => setToast(null)} />
 
@@ -256,7 +257,9 @@ const PolicyChecklist = () => {
                     <button
                         onClick={() => {
                             dispatch(navigate("policyList"))
+                            console
                             getPolicySummary(setPolicySummary, selectedBatchId, dispatch);
+                            getPolicyList(setPolicyList, batch.batch_id, dispatch);
 
                         }}
                         className="flex items-center gap-1 text-xs font-semibold text-gray-500 border border-gray-200 bg-white hover:bg-gray-50 px-3 py-2 rounded-md transition"
@@ -310,7 +313,7 @@ const PolicyChecklist = () => {
                     <div className="flex gap-2">
 
                         {/* ── Reviewed button with loader ── */}
-                        {policySummary?.status === "in_review" && policyAIStatus === "complete" && policyvalidation === "in_review" && policyValidated?.validation_status !== "validated" && (
+                        {policyvalidation === "in_review" && policyValidated?.validation_status !== "validated" && (
                             <button
                                 onClick={handleCheckReviwed}
                                 disabled={reviewing}

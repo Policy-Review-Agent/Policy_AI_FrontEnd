@@ -120,11 +120,13 @@ const PolicyListing = () => {
         setCurrentPage(1);
     };
 
-    const handleOpenPolicy = (idx, aistatus, validation) => {
+    const handleOpenPolicy = (policyId, aistatus, validation) => {
+        const idx = policyList.findIndex((p) => p.policy_id === policyId);
+        if (idx === -1) return;
         dispatch(selectPolicy(idx));
-        getPolicyCheckList(setPolicyCheckList, policyList[idx].policy_id, dispatch);
-        dispatch(setpolicyAIStatus(aistatus))
-        dispatch(setpolicyValidation(validation))
+        getPolicyCheckList(setPolicyCheckList, policyId, dispatch);
+        dispatch(setpolicyAIStatus(aistatus));
+        dispatch(setpolicyValidation(validation));
         dispatch(navigate("checklist"));
     };
 
@@ -213,7 +215,7 @@ const PolicyListing = () => {
                                 paginatedList.map((p, i) => (
                                     <tr
                                         key={p.policy_id || p.id || i}
-                                        onClick={() => handleOpenPolicy(startIndex + i, p.ai_status, p.validation_status)}
+                                        onClick={() => handleOpenPolicy(p.policy_id, p.ai_status, p.validation_status)}
                                         className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors last:border-b-0"
                                     >
                                         <td className="px-4 py-1.5 max-w-[140px]">
@@ -252,7 +254,7 @@ const PolicyListing = () => {
                                         </td>
                                         <td className="px-4 py-1.5">
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); handleOpenPolicy(startIndex + i, p.ai_status, p.validation_status); }}
+                                               onClick={(e) => { e.stopPropagation(); handleOpenPolicy(p.policy_id, p.ai_status, p.validation_status); }}
                                                 className="flex items-center gap-1 text-[11px] font-semibold text-gray-500 border border-gray-200 bg-white hover:border-gray-300 hover:text-gray-700 px-2.5 py-1 rounded-md transition"
                                             >
                                                 View <ArrowRight size={11} />
@@ -281,7 +283,7 @@ const PolicyListing = () => {
                             return (
                                 <div
                                     key={p.policy_id || p.id || i}
-                                    onClick={() => handleOpenPolicy(startIndex + i, p.ai_status, p.validation_status)}
+                                    onClick={() => handleOpenPolicy(p.policy_id, p.ai_status, p.validation_status)}
                                     className="bg-white border border-gray-200 rounded-xl shadow-sm cursor-pointer active:bg-gray-50 transition-colors overflow-hidden"
                                 >
                                     <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-gray-100">

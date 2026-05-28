@@ -11,8 +11,8 @@ const batchSlice = createSlice({
     policySummary: JSON.parse(sessionStorage.getItem("policy_summary")) || null,
     policyList: JSON.parse(sessionStorage.getItem("policy_list")) || null,
     checklistSummary: null,
-    policyCheckList: [],
-    documentData: [],
+    policyCheckList: null,
+    documentData: null,       // ← changed [] to null
     insureTypeIndex: 0,
     policyAIStatus: sessionStorage.getItem("policy_ai_status") || "",
     policyvalidation: sessionStorage.getItem("policy_validation") || "",
@@ -56,8 +56,15 @@ const batchSlice = createSlice({
     setPolicyCheckList: (state, action) => {
       state.policyCheckList = action.payload;
     },
+    resetPolicyCheckList: (state) => {
+      state.policyCheckList = null;
+      state.checklistSummary = null;
+    },
     setDocumentData: (state, action) => {
       state.documentData = action.payload;
+    },
+    resetDocumentData: (state) => {      // ← add this
+      state.documentData = null;
     },
     setInsureTypeIndex: (state, action) => {
       state.insureTypeIndex = action.payload;
@@ -78,7 +85,7 @@ const batchSlice = createSlice({
     },
     setPolicyValidated: (state, action) => {
       state.policyValidated = action.payload;
-    }
+    },
   },
 });
 
@@ -91,7 +98,9 @@ export const {
   setPolicyList,
   setChecklistSummary,
   setPolicyCheckList,
+  resetPolicyCheckList,
   setDocumentData,
+  resetDocumentData,        // ← export
   setInsureTypeIndex,
   setpolicyAIStatus,
   setpolicyValidation,
