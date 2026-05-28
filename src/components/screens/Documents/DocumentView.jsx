@@ -175,13 +175,22 @@ const DocumentView = ({ doc, documentData, isApiDataObject, pdfUrl, setMobileDet
     const { zoom2 } = useSelector((s) => s.validation);
     const [activeTab, setActiveTab] = useState("document");
 
-    const handleZoomIn  = () => dispatch(setZoom2(Math.min(zoom2 + 0.25, 3)));
+    const handleZoomIn = () => dispatch(setZoom2(Math.min(zoom2 + 0.25, 3)));
     const handleZoomOut = () => dispatch(setZoom2(Math.max(zoom2 - 0.25, 0.5)));
+
+    if (documentData === null) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[620px] gap-3 bg-gray-50">
+                <span className="w-7 h-7 border-2 border-[#6B55E8] border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm font-medium text-gray-400">Loading document…</span>
+            </div>
+        );
+    }
 
     const tabs = [
         { key: "document", label: "Document" },
         { key: "metadata", label: "Metadata" },
-        { key: "rules",    label: "Validation Rules" },
+        { key: "rules", label: "Validation Rules" },
     ];
 
     const docStatus = (doc?.status || doc?.detected_status || doc?.st || "missing").toLowerCase();
@@ -264,25 +273,25 @@ const DocumentView = ({ doc, documentData, isApiDataObject, pdfUrl, setMobileDet
                             (doc?.pdf_url ? doc.pdf_url.split("/").pop() : "Select a document")
                         }>
                             {doc?.file_name || doc?.file || doc?.filename ||
-                             (doc?.pdf_url ? doc.pdf_url.split("/").pop() : "Select a document")}
+                                (doc?.pdf_url ? doc.pdf_url.split("/").pop() : "Select a document")}
                         </span>
                     </div>
 
                     {/* Tabs + confidence — scrollable row */}
                     <div className="flex flex-row justify-between items-stretch overflow-x-auto scrollbar-none flex-1">
                         <div className="flex">
-                        {doc && tabs.map((t) => (
-                            <button
-                                key={t.key}
-                                onClick={() => setActiveTab(t.key)}
-                                className={`flex-shrink-0 flex items-center px-3 sm:px-4 text-[13px] font-semibold transition-colors whitespace-nowrap border-b-2
+                            {doc && tabs.map((t) => (
+                                <button
+                                    key={t.key}
+                                    onClick={() => setActiveTab(t.key)}
+                                    className={`flex-shrink-0 flex items-center px-3 sm:px-4 text-[13px] font-semibold transition-colors whitespace-nowrap border-b-2
                                     ${activeTab === t.key
-                                        ? "text-indigo-600 border-indigo-600"
-                                        : "text-gray-400 hover:text-gray-600 border-transparent"}`}
-                            >
-                                {t.label}
-                            </button>
-                        ))}
+                                            ? "text-indigo-600 border-indigo-600"
+                                            : "text-gray-400 hover:text-gray-600 border-transparent"}`}
+                                >
+                                    {t.label}
+                                </button>
+                            ))}
                         </div>
                         {confidenceValue > 0 && (
                             <div className="flex items-center px-3 flex-shrink-0 border-b-2 border-transparent">
@@ -373,9 +382,9 @@ const DocumentView = ({ doc, documentData, isApiDataObject, pdfUrl, setMobileDet
                         </p>
                         <div className="flex flex-col gap-2">
                             {rules.map((r, ri) => {
-                                const isPass   = r.status === "pass" || r === true;
+                                const isPass = r.status === "pass" || r === true;
                                 const ruleName = r.name || doc?.ruleNames?.[ri] || "Rule";
-                                const desc     = r.description;
+                                const desc = r.description;
                                 return (
                                     <div key={ri}
                                         className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">

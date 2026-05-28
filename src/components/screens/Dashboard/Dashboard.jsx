@@ -85,7 +85,7 @@ const Dashboard = () => {
                 getDashboardList(setDashboardList, dispatch),
             ]);
             setLoading(false);
-            setCurrentPage(1);
+            // setCurrentPage(1);
         };
         fetchDashboardData(); 
         const retryId = setTimeout(fetchDashboardData, 5000); 
