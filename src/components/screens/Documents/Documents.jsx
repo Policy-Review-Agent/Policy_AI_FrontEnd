@@ -35,7 +35,7 @@ const Documents = () => {
     const doc = activeList[selectedDocViewerIdx];
     const pdfUrl = (isApiDataObject && documentData.selected_document?.blob_url)
         ? documentData.selected_document.blob_url
-        : (doc?.pdf_url || doc?.pdfUrl || FALLBACK_PDF_URL);
+        : (doc?.pdf_url || doc?.pdfUrl);
 
     const validFilesLength = activeList.filter((d) => {
         const s = (d.status || d.detected_status || d.st || "").toLowerCase();
@@ -84,7 +84,7 @@ const Documents = () => {
             }
         }
     }, [policy?.policy_id, policyCheckList, isApiDataObject, documentData, selectedDocViewerIdx, dispatch]);
-    
+
     const Tooltip = ({ label, children }) => (
         <span className="relative group inline-flex items-center">
             {children}

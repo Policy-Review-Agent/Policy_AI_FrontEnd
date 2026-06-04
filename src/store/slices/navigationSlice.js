@@ -2,7 +2,10 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const navigationSlice = createSlice({
   name: "navigation",
-  initialState: { screen: sessionStorage.getItem("current_screen") || "dashboard", loginDetails: {} },
+  initialState: {
+    screen: sessionStorage.getItem("current_screen") || "dashboard",
+    loginDetails: JSON.parse(sessionStorage.getItem("login_details") || "{}") // ✅ rehydrate on refresh
+  },
   reducers: {
     navigate: (state, action) => {
       state.screen = action.payload;
@@ -13,6 +16,7 @@ const navigationSlice = createSlice({
     },
     setLoginDetails: (state, action) => {
       state.loginDetails = action.payload;
+      sessionStorage.setItem("login_details", JSON.stringify(action.payload)); // ✅ persist on set
     },
   },
 });

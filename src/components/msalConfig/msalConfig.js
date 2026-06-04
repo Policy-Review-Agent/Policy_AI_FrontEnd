@@ -1,4 +1,3 @@
-// src/azurelogin/msalClient.js
 import { PublicClientApplication } from "@azure/msal-browser";
 
 export const msalConfig = {
@@ -13,9 +12,11 @@ export const msalConfig = {
     storeAuthStateInCookie: false,
   },
 };
+
 export const msalInstance = new PublicClientApplication(msalConfig);
+export const msalInitPromise = msalInstance.initialize(); // ✅ init once, export the promise
+
 export const loginRequest = {
   scopes: [import.meta.env.VITE_LOGIN_SCOPE],
   prompt: "login",
-  //   prompt: "select_account",
 };

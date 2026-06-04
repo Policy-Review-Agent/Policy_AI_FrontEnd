@@ -78,24 +78,32 @@ const Dashboard = () => {
 
     // ── Fetch + Poll ──
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            // setLoading(true);
-            await Promise.all([
-                getDashboardStats(setDashboardStats, dispatch),
-                getDashboardList(setDashboardList, dispatch),
-            ]);
-            setLoading(false);
-            // setCurrentPage(1);
-        };
-        fetchDashboardData(); 
-        const retryId = setTimeout(fetchDashboardData, 5000); 
-        const intervalId = setInterval(fetchDashboardData, 30000);
+    let retryId;
+    let intervalId;
 
-        return () => {
-            clearTimeout(retryId);
-            clearInterval(intervalId);
-        };
-    }, []);
+    const fetchDashboardData = async () => {
+        await Promise.all([
+            getDashboardStats(setDashboardStats, dispatch),
+            getDashboardList(setDashboardList, dispatch),
+        ]);
+        setLoading(false);
+    };
+
+    const startPolling = async () => {
+        await fetchDashboardData();          // Wait for first call to resolve
+        retryId = setTimeout(async () => {
+            await fetchDashboardData();      // Wait for retry to resolve
+            intervalId = setInterval(fetchDashboardData, 30000); // Then start interval
+        }, 5000);
+    };
+
+    startPolling();
+
+    return () => {
+        clearTimeout(retryId);
+        clearInterval(intervalId);
+    };
+}, []);
 
     // ── Sort handler ──
     const handleSort = (field) => {

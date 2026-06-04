@@ -5,6 +5,7 @@ import { setValidatorDocDetails, setPolicyExtractedFields } from "../../../store
 import { createValidatorDocDetails, getValidatorDocDetails, deleteValidatorDocDetails, updateValidatorDocDetails, getPolicyExtractedFields } from "../../api/validatorApiCall";
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import ReactDOM from "react-dom";
+import { s } from "framer-motion/client";
 const MAX_VISIBLE_FIELDS = 2;
 
 // ── Skeleton rows (desktop) ───────────────────────────────────────────────────
@@ -79,15 +80,13 @@ const Toast = ({ toasts, onClose }) => (
                 <div
                     key={t.id}
                     style={{ animation: "slideIn 0.25s ease" }}
-                    className={`pointer-events-auto flex items-center gap-3 rounded-xl shadow-lg px-4 py-3 min-w-[260px] max-w-[320px] border ${
-                        isSuccess
+                    className={`pointer-events-auto flex items-center gap-3 rounded-xl shadow-lg px-4 py-3 min-w-[260px] max-w-[320px] border ${isSuccess
                             ? "bg-green-50 border-green-200"
                             : "bg-red-50 border-red-200"
-                    }`}
+                        }`}
                 >
-                    <div className={`flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0 ${
-                        isSuccess ? "bg-green-100" : "bg-red-100"
-                    }`}>
+                    <div className={`flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0 ${isSuccess ? "bg-green-100" : "bg-red-100"
+                        }`}>
                         {isSuccess
                             ? <Check size={13} className="text-green-600" />
                             : <X size={13} className="text-red-500" />
@@ -105,9 +104,8 @@ const Toast = ({ toasts, onClose }) => (
                     </div>
                     <button
                         onClick={() => onClose(t.id)}
-                        className={`flex-shrink-0 transition ${
-                            isSuccess ? "text-green-400 hover:text-green-600" : "text-red-300 hover:text-red-500"
-                        }`}
+                        className={`flex-shrink-0 transition ${isSuccess ? "text-green-400 hover:text-green-600" : "text-red-300 hover:text-red-500"
+                            }`}
                     >
                         <X size={13} />
                     </button>
@@ -319,6 +317,7 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
     const [docType, setDocType] = useState("");
     const [required, setRequired] = useState(true);
     const [description, setDescription] = useState("");
+    const [notes, setNotes] = useState("");
     const [fields, setFields] = useState([]);
     const [dropOpen, setDropOpen] = useState(false);
     const [docSearch, setDocSearch] = useState("");
@@ -331,9 +330,10 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
                 setDocType(editDoc.display_name || "");
                 setRequired(editDoc.required === true);
                 setDescription(editDoc.description || "");
+                setNotes(editDoc.notes || "");
                 setFields(editDoc.extract_fields || []);
             } else {
-                setDocType(""); setRequired(true); setDescription(""); setFields([]);
+                setDocType(""); setRequired(true); setDescription(""); setNotes(""); setFields([]);
             }
             setDropOpen(false); setDocSearch("");
         }
@@ -353,14 +353,14 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
         try {
             setLoading(true);
             const formattedType = docType.toLowerCase().replace(/\s+/g, "_");
-            const payload = { document_type: formattedType, display_name: docType, required, description, extract_fields: fields };
+            const payload = { document_type: formattedType, display_name: docType, required, description, notes, extract_fields: fields };
             if (isEdit && editDoc?.id) {
                 await updateValidatorDocDetails(editDoc.id, payload);
             } else {
                 await createValidatorDocDetails(payload, selectedPolicyId);
             }
             await getValidatorDocDetails(setValidatorDocDetails, dispatch, selectedPolicyId);
-            onSave({ id: editDoc?.id, name: docType, status: required ? "Required" : "Optional", description, fields });
+            onSave({ id: editDoc?.id, name: docType, status: required ? "Required" : "Optional", description, notes, fields });
             onClose();
         } catch (error) {
             console.error("Save Error:", error);
@@ -380,7 +380,7 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
                     </div>
                     <button onClick={onClose} className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors"><X size={14} /></button>
                 </div>
-                <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
+                <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-3">
                     <div>
                         <label className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /> Document Type
@@ -427,6 +427,11 @@ const AddDocumentPanel = ({ open, onClose, onSave, editDoc }) => {
                     <div>
                         <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 block">Description</label>
                         <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Describe the document purpose..."
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-[13px] text-gray-700 resize-none outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-300" />
+                    </div>
+                    <div>
+                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 block">Notes</label>
+                        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Add any additional notes..."
                             className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-[13px] text-gray-700 resize-none outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-300" />
                     </div>
                     <div>
@@ -486,14 +491,14 @@ const DocConfigTable = () => {
     };
     const closePanel = () => { setPanelOpen(false); setEditDoc(null); };
 
-    const handleSaveDoc = ({ id, name, status, description, fields }) => {
+    const handleSaveDoc = ({ id, name, status, description, notes, fields }) => {
         const current = localDocs || validatorDocDetails?.documents || [];
         if (id) {
-            setLocalDocs(current.map((d) => d.id === id ? { ...d, display_name: name, required: status === "Required", description, extract_fields: fields } : d));
+            setLocalDocs(current.map((d) => d.id === id ? { ...d, display_name: name, required: status === "Required", description, notes, extract_fields: fields } : d));
             addToast("success", "Document Updated", `${name} updated successfully.`);
         } else {
             const nextId = `local-${Date.now()}`;
-            setLocalDocs([...current, { id: nextId, display_name: name, required: status === "Required", description, extract_fields: fields, extract_fields_count: fields.length }]);
+            setLocalDocs([...current, { id: nextId, display_name: name, required: status === "Required", description, notes, extract_fields: fields, extract_fields_count: fields.length }]);
             addToast("success", "Document Added", `${name} added.`);
         }
     };
@@ -557,9 +562,9 @@ const DocConfigTable = () => {
                                     className="flex items-center gap-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wider hover:text-indigo-500 transition-colors"
                                 >
                                     {h}
-                                    {sortOrder === "asc"  && <ArrowUp   size={11} className="text-indigo-500" />}
+                                    {sortOrder === "asc" && <ArrowUp size={11} className="text-indigo-500" />}
                                     {sortOrder === "desc" && <ArrowDown size={11} className="text-indigo-500" />}
-                                    {!sortOrder           && <ArrowUpDown size={11} className="text-gray-300" />}
+                                    {!sortOrder && <ArrowUpDown size={11} className="text-gray-300" />}
                                 </button>
                             );
                         }
@@ -572,7 +577,7 @@ const DocConfigTable = () => {
                     ) : sortedDocs.length > 0 ? (
                         sortedDocs.map((doc, index) => {
                             const visibleFields = (doc?.extract_fields || []).slice(0, MAX_VISIBLE_FIELDS);
-                            const hiddenFields  = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
+                            const hiddenFields = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
                             return (
                                 <div key={index} className="grid grid-cols-[50px_220px_120px_1fr_80px_100px] gap-4 px-5 py-2.5 hover:bg-gray-50 transition-colors items-center">
                                     <div className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-semibold flex-shrink-0">{index + 1}</div>
@@ -606,7 +611,7 @@ const DocConfigTable = () => {
                 ) : sortedDocs.length > 0 ? (
                     sortedDocs.map((doc, index) => {
                         const visibleFields = (doc?.extract_fields || []).slice(0, MAX_VISIBLE_FIELDS);
-                        const hiddenFields  = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
+                        const hiddenFields = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
                         return (
                             <div key={index} className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex flex-col gap-3">
                                 <div className="flex items-start justify-between gap-2">
