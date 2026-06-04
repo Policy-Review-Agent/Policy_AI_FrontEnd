@@ -5,20 +5,22 @@ import { getUserInfo } from "../../api/getUserInfo";
 import { setLoginDetails } from "../../../store/slices/navigationSlice";
 
 const PrivateErrorRoute = () => {
-    const navigate  = useNavigate();
-    const dispatch  = useDispatch();
-    const token     = sessionStorage.getItem("access_token");
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const token = sessionStorage.getItem("access_token");
 
     const getUserDetails = useCallback(async (accessToken) => {
         try {
             const resp = await getUserInfo("/api/user-profile", accessToken);
             if (resp && resp?.data?.is_approved) {
-                dispatch(setLoginDetails(resp));
-                sessionStorage.setItem("client_id",    resp.data?.client_id);
-                sessionStorage.setItem("company_id",   resp.data?.company_id);
+                sessionStorage.setItem("client_id", resp.data?.client_id);
+                sessionStorage.setItem("company_id", resp.data?.company_id);
                 sessionStorage.setItem("company_name", resp.data?.company_name);
-                sessionStorage.setItem("email",        resp.data?.user_email);
+                sessionStorage.setItem("email", resp.data?.user_email);
+                sessionStorage.setItem("is_approved", "true");           // ✅ was missing here
+                dispatch(setLoginDetails(resp));                           // ✅ also persists to sessionStorage
                 navigate("/home", { replace: true });
+
             } else {
                 navigate("/Error", { replace: true });
             }
@@ -29,7 +31,10 @@ const PrivateErrorRoute = () => {
     }, [dispatch, navigate]);
 
     useEffect(() => {
-        if (token) {
+        const isApproved = sessionStorage.getItem("is_approved") === "true";
+        if (token && isApproved) {
+            navigate("/home", { replace: true });
+        } else if (token) {
             getUserDetails(token);
         } else {
             navigate("/");

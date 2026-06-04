@@ -29,6 +29,19 @@ export const createValidatorPolicy = async (payload) => {
         return { data: null, error: error.response?.data || error.message };
     }
 }
+
+export const updateValidatorSetUp = async (id, payload) => {
+    try {
+        const response = await putApi(`/api/frontend/validators/update/${id}/`, payload, {
+            // "X-Frontend-Token": "INSURVIA_FRONTEND_SECURE_TOKEN",    
+        })
+        return { data: response?.data || null, error: null };
+    } catch (error) {
+        console.log("FULL ERROR:", error.response);
+        return { data: null, error: error.response?.data || error.message };
+    }
+}
+
 export const getValidatorDocDetails = async (setValidatorDocDetails, dispatch, id) => {
     try {
         const response = await getApi(`/api/frontend/validators/detail/${id}/`, {
