@@ -575,13 +575,9 @@ const ValidatorSetup = () => {
                 </div>
                 <div className="flex items-center gap-3">
                     {/* ✅ Gradient toggle — Active / Inactive */}
-                    {/* <div className="flex flex-col items-center gap-1">
+                    <div className="flex flex-col items-center gap-1">
                         <div className="flex items-center gap-2.5">
-                            <p className="text-[11px] text-gray-400 tracking-wide">
-                                <span className="font-bold text-gray-600">{showActive ? activeCount : inactiveCount}</span>
-                                {" "}
-                                {showActive ? "active" : "inactive"} validator{(showActive ? activeCount : inactiveCount) !== 1 ? "s" : ""} listed
-                            </p>
+
 
                             <button
                                 onClick={() => setShowActive((v) => !v)}
@@ -605,9 +601,13 @@ const ValidatorSetup = () => {
                                     }}
                                 />
                             </button>
-
+                            <p className="text-[11px] text-gray-600 tracking-wide">
+                                <span className="font-bold text-gray-800">{showActive ? activeCount : inactiveCount}</span>
+                                {" "}
+                                {showActive ? "active" : "inactive"} validator{(showActive ? activeCount : inactiveCount) !== 1 ? "s" : ""} listed
+                            </p>
                         </div>
-                    </div> */}
+                    </div>
                     <button
                         onClick={openCreatePanel}
                         className="flex items-center gap-1.5 text-[12px] font-semibold text-white bg-[#6B55E8] hover:bg-[#5a45d4] px-3 py-1.5 rounded-md transition-all"
