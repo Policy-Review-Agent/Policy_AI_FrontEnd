@@ -37,7 +37,7 @@ const BatchCard = ({ batch }) => {
 
         <td className="px-3 py-1.5 text-[13px] text-gray-600">{batch.batch_date || "0"}</td>
         <td className="px-4 py-1.5 text-[13px] font-bold text-gray-700">{batch.total_policies || "0"}</td>
-        <td className="px-4 py-1.5 text-[13px] font-semibold text-green-600">{batch.processed || "0"}</td>
+        <td className="px-4 py-1.5 text-[13px] font-semibold text-green-600">{batch.ready_for_review || "0"}</td>
         <td className="px-4 py-1.5 text-[13px] font-semibold text-amber-500">{batch.reviewed || "0"}</td>
         <td className="px-3 py-1.5">
           <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${STATUS_MAP[batch.status] || "bg-gray-100 text-gray-500"}`}>

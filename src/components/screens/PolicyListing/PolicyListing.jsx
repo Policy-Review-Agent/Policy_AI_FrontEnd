@@ -163,7 +163,7 @@ const PolicyListing = () => {
                     </span>
                     <div className="text-sm text-gray-500 flex gap-3">
                         <span>Total: <strong className="text-gray-800">{policySummary?.total_policies}</strong></span>
-                        <span>Ready For Review: <strong className="text-green-600">{policySummary?.processed}</strong></span>
+                        <span>Ready For Review: <strong className="text-green-600">{policySummary?.ready_for_review}</strong></span>
                         <span>Reviewed: <strong className="text-amber-500">{policySummary?.reviewed}</strong></span>
                     </div>
                 </div>
