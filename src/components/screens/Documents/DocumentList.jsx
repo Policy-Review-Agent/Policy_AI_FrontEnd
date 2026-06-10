@@ -17,7 +17,7 @@ const DocListItem = ({ d, i, selectedDocViewerIdx, handleSelectDoc }) => {
     const isActive = selectedDocViewerIdx === i;
 
     const name = d?.document_name || d?.name;
-    const filename = d?.file_name || d?.file || d?.filename || (d.pdf_url ? d.pdf_url.split('/').pop() : "No file");
+    const filename = d?.file_name || d?.file || d?.filename || (d.pdf_url ? d.pdf_url.split('/').pop() : "");
 
     return (
         <button
