@@ -133,7 +133,10 @@ const Sidebar = ({ onClose, onNavigate }) => {
                     </div>
                 </div>
                 <button
-                    onClick={() => dispatch(logout())}
+                    onClick={() => {
+                        sessionStorage.clear();
+                        window.location.href = "/"
+                    }}
                     title="Logout"
                     className="flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors flex-shrink-0"
                 >
