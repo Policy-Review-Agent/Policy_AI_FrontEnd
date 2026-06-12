@@ -75,6 +75,18 @@ const UploadFile = () => {
             return;
         }
 
+        // ✅ Check file size — max 10MB
+        const maxSizeMB = 10;
+        const maxSizeBytes = maxSizeMB * 1024 * 1024;
+        if (selectedFile.size > maxSizeBytes) {
+            const actualMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
+            setFileError(`File size ${actualMB}MB exceeds the 10MB limit. Please upload a smaller file.`);
+            setFile(null);
+            setFileName("");
+            if (fileInputRef.current) fileInputRef.current.value = "";
+            return;
+        }
+
         // ✅ Validate content
         const { valid, error } = await validateCSV(selectedFile);
         if (!valid) {
@@ -207,6 +219,11 @@ const UploadFile = () => {
                                 <div className="mt-3 flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 w-fit">
                                     <FileText size={14} className="text-green-600 flex-shrink-0" />
                                     <span className="text-[12px] font-medium text-green-700 truncate flex-1">{fileName}</span>
+                                    {file && (
+                                        <span className="text-[10px] text-green-500 font-medium flex-shrink-0">
+                                            {(file.size / (1024 * 1024)).toFixed(2)}MB
+                                        </span>
+                                    )}
                                     <button onClick={handleCancel} className="text-green-400 hover:text-red-500 transition-colors flex-shrink-0">
                                         <X size={13} />
                                     </button>
@@ -283,6 +300,7 @@ const UploadFile = () => {
                         <div className="flex flex-col gap-1.5">
                             {[
                                 "File must be .csv format",
+                                "Maximum file size is 10MB",
                                 "Must have valid column headers",
                                 "Must contain at least one data row",
                                 "Data rows must not be empty",
