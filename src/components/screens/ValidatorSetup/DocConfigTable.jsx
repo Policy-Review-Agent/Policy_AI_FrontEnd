@@ -6,6 +6,7 @@ import { createValidatorDocDetails, getValidatorDocDetails, deleteValidatorDocDe
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import ReactDOM from "react-dom";
 import { s } from "framer-motion/client";
+import DescriptionTooltip from "./Descriptiontooltip"
 const MAX_VISIBLE_FIELDS = 2;
 
 // ── Skeleton rows (desktop) ───────────────────────────────────────────────────
@@ -81,8 +82,8 @@ const Toast = ({ toasts, onClose }) => (
                     key={t.id}
                     style={{ animation: "slideIn 0.25s ease" }}
                     className={`pointer-events-auto flex items-center gap-3 rounded-xl shadow-lg px-4 py-3 min-w-[260px] max-w-[320px] border ${isSuccess
-                            ? "bg-green-50 border-green-200"
-                            : "bg-red-50 border-red-200"
+                        ? "bg-green-50 border-green-200"
+                        : "bg-red-50 border-red-200"
                         }`}
                 >
                     <div className={`flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0 ${isSuccess ? "bg-green-100" : "bg-red-100"
@@ -549,11 +550,10 @@ const DocConfigTable = () => {
                     </div>
                 )}
             </div>
-
             {/* ── DESKTOP table ── */}
             <div className="hidden md:block bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                <div className="grid grid-cols-[50px_220px_120px_1fr_80px_100px] gap-4 px-5 py-2.5 bg-gray-50 border-b border-gray-100">
-                    {["#", "DOCUMENT TYPE", "STATUS", "EXTRACT FIELDS", "FIELDS", "ACTIONS"].map((h) => {
+                <div className="grid grid-cols-[50px_220px_120px_180px_1fr_80px_100px] gap-4 px-5 py-2.5 bg-gray-50 border-b border-gray-100">
+                    {["#", "DOCUMENT TYPE", "DESCRIPTION", "STATUS", "EXTRACT FIELDS", "FIELDS", "ACTIONS"].map((h) => {
                         if (h === "DOCUMENT TYPE") {
                             return (
                                 <button
@@ -579,19 +579,36 @@ const DocConfigTable = () => {
                             const visibleFields = (doc?.extract_fields || []).slice(0, MAX_VISIBLE_FIELDS);
                             const hiddenFields = (doc?.extract_fields || []).slice(MAX_VISIBLE_FIELDS);
                             return (
-                                <div key={index} className="grid grid-cols-[50px_220px_120px_1fr_80px_100px] gap-4 px-5 py-2.5 hover:bg-gray-50 transition-colors items-center">
-                                    <div className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-semibold flex-shrink-0">{index + 1}</div>
+                                <div key={index} className="grid grid-cols-[50px_220px_120px_180px_1fr_80px_100px] gap-4 px-5 py-2.5 hover:bg-gray-50 transition-colors items-center">
+                                    {/* # */}
+                                    <div className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-semibold flex-shrink-0">
+                                        {index + 1}
+                                    </div>
+
+                                    {/* DOCUMENT TYPE */}
                                     <span className="text-[12px] font-bold text-gray-800 truncate">{doc.display_name}</span>
+                                    {/* DESCRIPTION */}
+                                    <DescriptionTooltip text={doc.description} />
+
+                                    {/* STATUS */}
                                     <div>
                                         <span className={`text-[10px] font-semibold px-3 py-1 rounded-full ${doc.required === true ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"}`}>
                                             {doc.required === true ? "Required" : "Optional"}
                                         </span>
                                     </div>
+
+                                    {/* EXTRACT FIELDS */}
                                     <div className="flex flex-wrap items-center gap-1.5">
                                         {visibleFields.map((f) => <FieldTag key={f} label={f} />)}
                                         {hiddenFields.length > 0 && <ExtraFieldsBadge fields={hiddenFields} />}
                                     </div>
-                                    <span className="text-[13px] font-bold text-indigo-500">{doc.extract_fields_count ?? (doc?.extract_fields || []).length}</span>
+
+                                    {/* FIELDS count */}
+                                    <span className="text-[13px] font-bold text-indigo-500">
+                                        {doc.extract_fields_count ?? (doc?.extract_fields || []).length}
+                                    </span>
+
+                                    {/* ACTIONS */}
                                     <ActionButtons doc={doc} />
                                 </div>
                             );
@@ -616,11 +633,19 @@ const DocConfigTable = () => {
                             <div key={index} className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex flex-col gap-3">
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="flex items-center gap-2 min-w-0">
-                                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-semibold flex-shrink-0">{index + 1}</span>
+                                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-semibold flex-shrink-0">
+                                            {index + 1}
+                                        </span>
                                         <span className="text-[13px] font-bold text-gray-800 leading-snug truncate">{doc.display_name}</span>
                                     </div>
                                     <ActionButtons doc={doc} />
                                 </div>
+
+                                {/* ✅ Description — mobile */}
+                                {doc.description && (
+                                    <p className="text-[11px] text-gray-500 leading-relaxed">{doc.description}</p>
+                                )}
+
                                 <div className="flex items-center gap-2">
                                     <span className={`text-[10px] font-semibold px-3 py-1 rounded-full ${doc.required === true ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"}`}>
                                         {doc.required === true ? "Required" : "Optional"}
@@ -629,6 +654,7 @@ const DocConfigTable = () => {
                                         {doc.extract_fields_count ?? (doc?.extract_fields || []).length} fields
                                     </span>
                                 </div>
+
                                 <div>
                                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Extract Fields</p>
                                     <div className="flex flex-wrap items-center gap-1.5">
