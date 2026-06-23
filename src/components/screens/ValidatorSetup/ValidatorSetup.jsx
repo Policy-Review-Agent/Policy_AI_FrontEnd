@@ -1,34 +1,21 @@
-import React, { useEffect, useState, useMemo,useRef } from "react";
+import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import ValidatorBreadcrumb from "./ValidatorBreadcrumb";
 import { validatorNavigate } from "../../../store/slices/navigationSlice";
 import { setInsureTypeIndex } from "../../../store/slices/batchSlice";
-import { setValidatorSetupList, setValidatorCreate, setValidatorDocDetails, setSelectedPolicyId, setDocumentTypes, setPolicyExtractedFields } from "../../../store/slices/validatorSetupSlice";
-import { Shield, ArrowRight, X, Check, ChevronDown, MapPin, Building2, Rocket, CheckCircle, AlertCircle } from "lucide-react";
+import {
+    setValidatorSetupList, setValidatorCreate, setValidatorDocDetails,
+    setSelectedPolicyId, setDocumentTypes, setPolicyExtractedFields,
+    setProviders, setStates, setLocations,
+} from "../../../store/slices/validatorSetupSlice";
+import {
+    Shield, ArrowRight, X, Check, ChevronDown, MapPin, Building2,
+    Rocket, CheckCircle, AlertCircle, MoreVertical, Pencil, Trash2,
+} from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { getValidatorSetupList, createValidatorPolicy, getValidatorDocDetails, getDocumentTypeOptions, depolyValidatorRule } from "../../api/validatorApiCall";
-
-const US_STATES = [
-    "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut",
-    "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa",
-    "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan",
-    "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire",
-    "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio",
-    "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota",
-    "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia",
-    "Wisconsin", "Wyoming",
-];
-
-const PROVIDERS = [
-    "Lafamilia", "Fiasta", "Geico", "Nationwide", "Insurvia",
-    "Travelers", "Progressive", "Allstate", "Liberty Mutual", "State Farm",
-];
-
-const LOCATIONS = [
-    "New York, NY", "Los Angeles, CA", "Chicago, IL", "Houston, TX",
-    "Phoenix, AZ", "Philadelphia, PA", "San Antonio, TX", "San Diego, CA",
-    "Dallas, TX", "San Jose, CA", "Austin, TX", "Jacksonville, FL",
-    "London, UK", "Sydney, AU", "Singapore", "Dubai, UAE",
-];
+import {
+    getValidatorSetupList, createValidatorPolicy, getValidatorDocDetails,
+    getDocumentTypeOptions, depolyValidatorRule, getProviders, getStates, getLocations, updateValidatorSetUp
+} from "../../api/validatorApiCall";
 
 const BG_PRESETS = [
     "bg-gradient-to-br from-[#8B7FF5] to-[#6B55E8]",
@@ -66,35 +53,54 @@ const SkeletonCard = () => (
 // ── Toast ─────────────────────────────────────────────────────────────────────
 const Toast = ({ toasts, onClose }) => (
     <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none">
-        {toasts.map((t) => (
-            <div key={t.id} style={{ animation: "slideIn 0.25s ease" }}
-                className="pointer-events-auto flex items-start gap-3 bg-white border border-gray-200 rounded-2xl shadow-xl px-4 py-3 min-w-[260px] max-w-[320px]">
-                <div className={`flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0 ${t.type === "success" ? "bg-green-50" : "bg-red-50"}`}>
-                    {t.type === "success"
-                        ? <Check size={13} className="text-green-500" />
-                        : <X size={13} className="text-red-500" />
-                    }
+        {toasts.map((toast) => {
+            const isSuccess = toast.type === "success";
+            return (
+                <div
+                    key={toast.id}
+                    className={`flex items-center gap-3 rounded-xl shadow-lg px-4 py-3 min-w-[240px] max-w-[340px] border pointer-events-auto ${isSuccess ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}
+                    style={{ animation: "slideInToast 0.25s ease" }}
+                >
+                    <div className={`flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0 ${isSuccess ? "bg-green-100" : "bg-red-100"}`}>
+                        {isSuccess
+                            ? <CheckCircle size={14} className="text-green-600" />
+                            : <AlertCircle size={14} className="text-red-500" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className={`text-[13px] font-semibold ${isSuccess ? "text-green-700" : "text-red-700"}`}>{toast.title}</p>
+                        {toast.subtitle && (
+                            <p className={`text-[11px] mt-0.5 ${isSuccess ? "text-green-600" : "text-red-500"}`}>{toast.subtitle}</p>
+                        )}
+                    </div>
+                    <button
+                        onClick={() => onClose(toast.id)}
+                        className={`flex-shrink-0 transition ${isSuccess ? "text-green-400 hover:text-green-600" : "text-red-300 hover:text-red-500"}`}
+                    >
+                        <X size={14} />
+                    </button>
                 </div>
-                <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-bold text-gray-800">{t.title}</p>
-                    {t.subtitle && <p className="text-[11px] text-gray-400 mt-0.5">{t.subtitle}</p>}
-                </div>
-                <button onClick={() => onClose(t.id)} className="text-gray-300 hover:text-gray-500 flex-shrink-0">
-                    <X size={13} />
-                </button>
-            </div>
-        ))}
+            );
+        })}
+        <style>{`
+            @keyframes slideInToast {
+                from { opacity: 0; transform: translateX(40px); }
+                to   { opacity: 1; transform: translateX(0); }
+            }
+        `}</style>
     </div>
 );
 
 // ── Toggle ────────────────────────────────────────────────────────────────────
 const Toggle = ({ checked, onChange }) => (
-    <button onClick={onChange}
-        className={`relative inline-flex items-center w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0 ${checked ? "bg-[#6B55E8]" : "bg-gray-300"}`}>
+    <button
+        onClick={onChange}
+        className={`relative inline-flex items-center w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0 ${checked ? "bg-[#6B55E8]" : "bg-gray-300"}`}
+    >
         <span className={`inline-block w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${checked ? "translate-x-6" : "translate-x-1"}`} />
     </button>
 );
 
+// ── Field ─────────────────────────────────────────────────────────────────────
 const Field = ({ label, required, children }) => (
     <div>
         <label className="flex items-center gap-1 text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
@@ -104,37 +110,62 @@ const Field = ({ label, required, children }) => (
     </div>
 );
 
-// ── Reusable searchable dropdown ──────────────────────────────────────────────
+// ── SearchableSelect ──────────────────────────────────────────────────────────
 const SearchableSelect = ({ value, onChange, options, placeholder, dropRef }) => {
-    const [open, setOpen]     = useState(false);
+    const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
+    const [dropUp, setDropUp] = useState(false);
+    const buttonRef = useRef(null);
+
+    const normalised = options.map((o) => {
+        if (typeof o === "string") return { label: o, value: o };
+        return {
+            label: o.label ?? o.provider_name ?? o.code ?? o.location_code ?? "",
+            value: o.value ?? o.id ?? "",
+        };
+    });
+
+    const selectedLabel = normalised.find((o) => o.value === value)?.label ?? "";
 
     useEffect(() => {
         const handler = (e) => {
-            if (dropRef?.current && !dropRef.current.contains(e.target)) setOpen(false);
+            if (dropRef?.current && !dropRef.current.contains(e.target)) {
+                setOpen(false);
+                setSearch("");
+            }
         };
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
     }, [dropRef]);
 
-    const filtered = options.filter((o) =>
-        o.toLowerCase().includes(search.toLowerCase())
+    const handleToggle = () => {
+        if (!open && buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect();
+            setDropUp(window.innerHeight - rect.bottom < 230);
+        }
+        setOpen((o) => !o);
+        if (open) setSearch("");
+    };
+
+    const filtered = normalised.filter((o) =>
+        o.label?.toLowerCase().includes(search.toLowerCase())
     );
 
     return (
         <div className="relative" ref={dropRef}>
             <button
-                onClick={() => setOpen((o) => !o)}
+                ref={buttonRef}
+                onClick={handleToggle}
                 className="w-full flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-[13px] bg-gray-50 hover:border-[#6B55E8] transition-colors"
             >
-                <span className={value ? "text-gray-700" : "text-gray-300"}>
-                    {value || placeholder}
+                <span className={selectedLabel ? "text-gray-700" : "text-gray-300"}>
+                    {selectedLabel || placeholder}
                 </span>
                 <ChevronDown size={14} className={`text-gray-400 transition-transform flex-shrink-0 ${open ? "rotate-180" : ""}`} />
             </button>
 
             {open && (
-                <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+                <div className={`absolute z-[999] left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden ${dropUp ? "bottom-full mb-1" : "top-full mt-1"}`}>
                     <div className="p-2 border-b border-gray-100">
                         <input
                             autoFocus
@@ -145,21 +176,18 @@ const SearchableSelect = ({ value, onChange, options, placeholder, dropRef }) =>
                         />
                     </div>
                     <div className="max-h-44 overflow-y-auto">
-                        {filtered.map((s) => (
+                        {filtered.map((o) => (
                             <button
-                                key={s}
-                                onMouseDown={() => { onChange(s); setOpen(false); setSearch(""); }}
-                                className={`w-full text-left px-3 py-2 text-[13px] hover:bg-indigo-50 hover:text-indigo-600 transition-colors flex items-center justify-between
-                                    ${value === s ? "text-indigo-600 font-semibold bg-indigo-50" : "text-gray-700"}`}
+                                key={o.value}
+                                onMouseDown={() => { onChange(o.value); setOpen(false); setSearch(""); }}
+                                className={`w-full text-left px-3 py-2 text-[13px] hover:bg-indigo-50 hover:text-indigo-600 transition-colors flex items-center justify-between ${value === o.value ? "text-indigo-600 font-semibold bg-indigo-50" : "text-gray-700"}`}
                             >
-                                <span>{s}</span>
-                                {value === s && <Check size={12} className="text-indigo-500" />}
+                                <span>{o.label}</span>
+                                {value === o.value && <Check size={12} className="text-indigo-500" />}
                             </button>
                         ))}
                         {filtered.length === 0 && (
-                            <p className="px-3 py-3 text-[12px] text-gray-400 text-center">
-                                No results for "{search}"
-                            </p>
+                            <p className="px-3 py-3 text-[12px] text-gray-400 text-center">No results for "{search}"</p>
                         )}
                     </div>
                 </div>
@@ -168,43 +196,93 @@ const SearchableSelect = ({ value, onChange, options, placeholder, dropRef }) =>
     );
 };
 
-// ── Add Policy Panel ──────────────────────────────────────────────────────────
+// ── Add / Edit Policy Panel ───────────────────────────────────────────────────
 const EMPTY_FORM = { checklistName: "", provider: "", state: "", location: "", description: "", active: true };
 
-const AddPolicyPanel = ({ open, onClose, onSave }) => {
+const AddPolicyPanel = ({ open, onClose, onSave, editData = null }) => {
     const dispatch = useDispatch();
     const [form, setForm] = useState(EMPTY_FORM);
-
+    const [saving, setSaving] = useState(false);  // ✅ loading state for save button
     const providerRef = useRef(null);
-    const stateRef    = useRef(null);
+    const stateRef = useRef(null);
     const locationRef = useRef(null);
 
-    // ✅ Reset by passing initial state on open — no effect needed
+    const { providers, states, locations } = useSelector((state) => state.validatorSetup);
+
+    // ✅ Populate form when editing
+    useEffect(() => {
+        if (editData) {
+            setForm({
+                checklistName: editData.name || "",
+                provider: editData.provider?.id || "",
+                state: editData.state?.id || "",
+                location: editData.location?.id || "",
+                description: editData.description || "",
+                active: editData.is_active ?? true,
+            });
+            // Load locations for the pre-selected state
+            if (editData.state?.id) {
+                getLocations(editData.state.id, dispatch, setLocations);
+            }
+        } else {
+            setForm(EMPTY_FORM);
+        }
+    }, [editData, dispatch]);
+
+    const PROVIDERS = providers.map((item) => ({ value: item.id, label: item.provider_name }));
+    const US_STATES = states.map((item) => ({ value: item.id, label: item.code }));
+    const LOCATIONS = locations.map((item) => ({ value: item.id, label: item.location_code }));
+
     const handleClose = () => {
+        if (saving) return; // prevent close while saving
         setForm(EMPTY_FORM);
         onClose();
     };
 
     const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
 
-    const canSave = form.checklistName.trim() && form.provider.trim() && form.state && form.location.trim();
+    const handleState = (value) => {
+        set("state")(value);
+        set("location")(""); // reset location when state changes
+        getLocations(value, dispatch, setLocations);
+    };
 
-    const handleSave = () => {
+    const canSave = form.checklistName.trim() && !saving;
+
+    const handleSave = async () => {
         if (!canSave) return;
+
         const payload = {
             name: form.checklistName,
-            provider: form.provider,
-            state: form.state,
-            location: form.location,
+            provider: form.provider || null,
+            state: form.state || null,
+            location: form.location || null,
             description: form.description,
             is_active: form.active,
         };
-        dispatch(setValidatorCreate(payload));
-        createValidatorPolicy(payload);
-        getValidatorSetupList(setValidatorSetupList, dispatch);
-        onSave({ checklistName: form.checklistName });
-        handleClose();
+
+        setSaving(true);
+        try {
+            if (editData?.id) {
+                // ✅ EDIT — call updateValidatorSetUp with id + payload
+                await updateValidatorSetUp(editData.id, payload);
+            } else {
+                // ✅ CREATE — call createValidatorPolicy
+                dispatch(setValidatorCreate(payload));
+                await createValidatorPolicy(payload);
+            }
+            await getValidatorSetupList(setValidatorSetupList, dispatch);
+            onSave({ checklistName: form.checklistName, isEdit: !!editData });
+            handleClose();
+        } catch (err) {
+            console.error("Save failed:", err);
+            // error toast is handled in parent via onSave callback if needed
+        } finally {
+            setSaving(false);
+        }
     };
+
+    const isEdit = !!editData;
 
     return (
         <>
@@ -214,17 +292,20 @@ const AddPolicyPanel = ({ open, onClose, onSave }) => {
                 {/* Header */}
                 <div className="flex items-start justify-between px-6 py-4 border-b border-gray-100">
                     <div>
-                        <h2 className="text-[17px] font-bold text-gray-800">New AI Configuration Checklist</h2>
-                        <p className="text-[12px] text-gray-400 mt-0.5">Define a new AI checklist for document validation.</p>
+                        <h2 className="text-[17px] font-bold text-gray-800">
+                            {isEdit ? "Edit AI Configuration Checklist" : "New AI Configuration Checklist"}
+                        </h2>
+                        <p className="text-[12px] text-gray-400 mt-0.5">
+                            {isEdit ? "Update the checklist details below." : "Define a new AI checklist for document validation."}
+                        </p>
                     </div>
-                    <button onClick={handleClose} className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors">
+                    <button onClick={handleClose} disabled={saving} className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors disabled:opacity-40">
                         <X size={14} />
                     </button>
                 </div>
 
                 {/* Body */}
                 <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-3">
-
                     <Field label="Checklist Name" required>
                         <input
                             value={form.checklistName}
@@ -234,7 +315,7 @@ const AddPolicyPanel = ({ open, onClose, onSave }) => {
                         />
                     </Field>
 
-                    <Field label="Provider" required>
+                    <Field label="Provider">
                         <SearchableSelect
                             value={form.provider}
                             onChange={set("provider")}
@@ -244,17 +325,17 @@ const AddPolicyPanel = ({ open, onClose, onSave }) => {
                         />
                     </Field>
 
-                    <Field label="State" required>
+                    <Field label="State">
                         <SearchableSelect
                             value={form.state}
-                            onChange={set("state")}
+                            onChange={handleState}
                             options={US_STATES}
                             placeholder="Select State..."
                             dropRef={stateRef}
                         />
                     </Field>
 
-                    <Field label="Location" required>
+                    <Field label="Location">
                         <SearchableSelect
                             value={form.location}
                             onChange={set("location")}
@@ -287,20 +368,79 @@ const AddPolicyPanel = ({ open, onClose, onSave }) => {
 
                 {/* Footer */}
                 <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-white">
-                    <button onClick={handleClose}
-                        className="text-[13px] font-semibold text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 px-5 py-2 rounded-lg transition-all">
+                    <button
+                        onClick={handleClose}
+                        disabled={saving}
+                        className="text-[13px] font-semibold text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 px-5 py-2 rounded-lg transition-all disabled:opacity-40"
+                    >
                         Cancel
                     </button>
-                    <button onClick={handleSave} disabled={!canSave}
-                        className={`flex items-center gap-2 text-[13px] font-semibold px-5 py-2 rounded-lg transition-all
-                            ${canSave
-                                ? "text-white bg-[#6B55E8] hover:bg-[#5a45d4]"
-                                : "text-white bg-gray-300 cursor-not-allowed opacity-60"}`}>
-                        <Check size={13} /> Create Checklist
+                    <button
+                        onClick={handleSave}
+                        disabled={!canSave}
+                        className={`flex items-center gap-2 text-[13px] font-semibold px-5 py-2 rounded-lg transition-all ${canSave ? "text-white bg-[#6B55E8] hover:bg-[#5a45d4]" : "text-white bg-gray-300 cursor-not-allowed opacity-60"}`}
+                    >
+                        {saving ? (
+                            <>
+                                <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                {isEdit ? "Saving..." : "Creating..."}
+                            </>
+                        ) : (
+                            <>
+                                <Check size={13} />
+                                {isEdit ? "Save Changes" : "Create Checklist"}
+                            </>
+                        )}
                     </button>
                 </div>
             </div>
         </>
+    );
+};
+
+// ── Three-dot Card Menu ───────────────────────────────────────────────────────
+const CardMenu = ({ onEdit }) => {
+    const [open, setOpen] = useState(false);
+    const menuRef = useRef(null);
+
+    useEffect(() => {
+        if (!open) return;
+        const handler = (e) => {
+            if (menuRef.current && !menuRef.current.contains(e.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, [open]);
+
+    return (
+        <div className="relative" ref={menuRef}>
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setOpen((o) => !o);
+                }}
+                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+                <MoreVertical size={15} />
+            </button>
+
+            {open && (
+                <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden min-w-[120px]">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setOpen(false);
+                            onEdit();
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                    >
+                        <Pencil size={13} /> Edit
+                    </button>
+                </div>
+            )}
+        </div>
     );
 };
 
@@ -309,16 +449,26 @@ const ValidatorSetup = () => {
     const dispatch = useDispatch();
     const { validatorlist } = useSelector((state) => state.validatorSetup);
 
-    // ✅ Memoized so the reference is stable across renders
-    const cards = useMemo(() => validatorlist || [], [validatorlist]);
+    const allCards = useMemo(() => validatorlist || [], [validatorlist]);
+    const [showActive, setShowActive] = useState(true); // ✅ true = Active, false = Inactive
 
-    const [loading,     setLoading]     = useState(true);
-    const [panelOpen,   setPanelOpen]   = useState(false);
-    const [hoveredId,   setHoveredId]   = useState(null);
-    const [toasts,      setToasts]      = useState([]);
+    // ✅ Filter cards based on toggle
+    const cards = useMemo(() =>
+        allCards.filter((c) => c.is_active === showActive),
+        [allCards, showActive]
+    );
+
+    const activeCount = useMemo(() => allCards.filter((c) => c.is_active).length, [allCards]);
+    const inactiveCount = useMemo(() => allCards.filter((c) => !c.is_active).length, [allCards]);
+
+    const [loading, setLoading] = useState(true);
+    const [panelOpen, setPanelOpen] = useState(false);
+    const [editData, setEditData] = useState(null);
+    const [hoveredId, setHoveredId] = useState(null);
+    const [toasts, setToasts] = useState([]);
     const [deployingId, setDeployingId] = useState(null);
-    const [deployedId,  setDeployedId]  = useState(null);
-    const [toast,       setToast]       = useState(null);
+    const [deployedId, setDeployedId] = useState(null);
+    const [toast, setToast] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -330,8 +480,8 @@ const ValidatorSetup = () => {
     }, [dispatch]);
 
     useEffect(() => {
-        if (cards.length > 0) setLoading(false);
-    }, [cards]);
+        if (allCards.length > 0) setLoading(false);
+    }, [allCards]);
 
     const addToast = (type, title, subtitle) => {
         const id = Date.now();
@@ -345,11 +495,31 @@ const ValidatorSetup = () => {
         setTimeout(() => setToast(null), 4500);
     };
 
-    const handleSave = ({ checklistName }) => {
-        getValidatorSetupList(setValidatorSetupList, dispatch);
-        addToast("success", "Checklist Created", `"${checklistName}" has been created successfully.`);
+    // ── Panel open helpers ────────────────────────────────────────────────────
+    const openCreatePanel = () => {
+        setEditData(null);
+        setPanelOpen(true);
+        getProviders(dispatch, setProviders);
+        getStates(dispatch, setStates);
     };
 
+    const openEditPanel = (value) => {
+        setEditData(value);          // ✅ pass full card object — panel pre-fills from this
+        setPanelOpen(true);
+        getProviders(dispatch, setProviders);
+        getStates(dispatch, setStates);
+    };
+
+    // ✅ onSave — called after API succeeds inside panel
+    const handleSave = ({ checklistName, isEdit }) => {
+        addToast(
+            "success",
+            isEdit ? "Checklist Updated" : "Checklist Created",
+            `"${checklistName}" has been ${isEdit ? "updated" : "created"} successfully.`
+        );
+    };
+
+    // ── Deploy ────────────────────────────────────────────────────────────────
     const handleDeploy = async (e, id) => {
         e.stopPropagation();
         setDeployingId(id);
@@ -364,7 +534,7 @@ const ValidatorSetup = () => {
                 showToast("error", response?.data?.message || "Deploy failed. Please try again.");
             }
         } catch (err) {
-            showToast("error", "Something went wrong. Please try again.", err);
+            showToast("error", "Something went wrong. Please try again.");
         } finally {
             setDeployingId(null);
         }
@@ -374,19 +544,20 @@ const ValidatorSetup = () => {
         <div className="min-w-0 w-full">
             <ValidatorBreadcrumb crumbs={[{ label: "ValidatorSetup" }]} />
             <Toast toasts={toasts} onClose={removeToast} />
-            <AddPolicyPanel open={panelOpen} onClose={() => setPanelOpen(false)} onSave={handleSave} />
+
+            <AddPolicyPanel
+                open={panelOpen}
+                onClose={() => { setPanelOpen(false); setEditData(null); }}
+                onSave={handleSave}
+                editData={editData}
+            />
 
             {/* Deploy toast */}
             {toast && (
-                <div className={`fixed bottom-5 right-5 z-[110] flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg border text-[13px] font-medium
-                    ${toast.type === "success"
-                        ? "bg-green-50 border-green-200 text-green-700"
-                        : "bg-red-50 border-red-200 text-red-700"}`}
-                >
+                <div className={`fixed bottom-5 right-5 z-[110] flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg border text-[13px] font-medium ${toast.type === "success" ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700"}`}>
                     {toast.type === "success"
                         ? <CheckCircle size={15} className="text-green-500 flex-shrink-0" />
-                        : <AlertCircle size={15} className="text-red-500 flex-shrink-0" />
-                    }
+                        : <AlertCircle size={15} className="text-red-500 flex-shrink-0" />}
                     {toast.msg}
                     <button onClick={() => setToast(null)} className="ml-2 opacity-60 hover:opacity-100">
                         <X size={13} />
@@ -402,110 +573,143 @@ const ValidatorSetup = () => {
                         Select a policy to configure document requirements and validation rules.
                     </p>
                 </div>
-                <button
-                    onClick={() => setPanelOpen(true)}
-                    className="flex items-center gap-1.5 text-[12px] font-semibold text-white bg-[#6B55E8] hover:bg-[#5a45d4] px-3 py-1.5 rounded-md transition-all"
-                >
-                    + New AI Configuration Checklist
-                </button>
+                <div className="flex items-center gap-3">
+                    {/* ✅ Gradient toggle — Active / Inactive */}
+                    <div className="flex flex-col items-center gap-1">
+                        <div className="flex items-center gap-2.5">
+
+
+                            <button
+                                onClick={() => setShowActive((v) => !v)}
+                                style={{
+                                    background: "linear-gradient(135deg, #6B55E8 0%, #6B55E8 50%, #6B55E8 100%)",
+                                    transition: "all 0.3s ease",
+                                }}
+                                className="relative flex-shrink-0 w-[52px] h-[25px] rounded-full focus:outline-none"
+                            >
+                                <span
+                                    style={{
+                                        width: "17px",
+                                        height: "16px",
+                                        top: "4px",
+                                        left: showActive ? "calc(100% - 25px)" : "3px",
+                                        transition: "left 0.3s cubic-bezier(0.4,0,0.2,1)",
+                                        boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+                                        position: "absolute",
+                                        background: "white",
+                                        borderRadius: "50%",
+                                    }}
+                                />
+                            </button>
+                            <p className="text-[11px] text-gray-600 tracking-wide">
+                                <span className="font-bold text-gray-800">{showActive ? activeCount : inactiveCount}</span>
+                                {" "}
+                                {showActive ? "active" : "inactive"} validator{(showActive ? activeCount : inactiveCount) !== 1 ? "s" : ""} listed
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={openCreatePanel}
+                        className="flex items-center gap-1.5 text-[12px] font-semibold text-white bg-[#6B55E8] hover:bg-[#5a45d4] px-3 py-1.5 rounded-md transition-all"
+                    >
+                        + New AI Configuration Checklist
+                    </button>
+                </div>
             </div>
 
             {/* Cards grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {loading
                     ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={`skel-${i}`} />)
-                    : cards.map((value, idx) => (
-                        <div
-                            key={value.id}
-                            onMouseEnter={() => setHoveredId(value.id)}
-                            onMouseLeave={() => setHoveredId(null)}
-                            onClick={() => {
-                                dispatch(validatorNavigate("vadlidateInsurance"));
-                                dispatch(setInsureTypeIndex(idx));
-                                dispatch(setSelectedPolicyId(value.id));
-                                dispatch(setPolicyExtractedFields([]));
-                                getValidatorDocDetails(setValidatorDocDetails, dispatch, value.id);
-                                getDocumentTypeOptions(setDocumentTypes, dispatch);
-                            }}
-                            style={{
-                                border: hoveredId === value.id ? "1px solid #a5b4fc" : "1px solid #e5e7eb",
-                                boxShadow: hoveredId === value.id ? "0 1px 10px rgba(99,102,241,0.15)" : "0 1px 3px rgba(0,0,0,0.06)",
-                                transform: hoveredId === value.id ? "scale(1.015)" : "scale(1)",
-                                transition: "all 0.25s ease",
-                            }}
-                            className="flex flex-col bg-white rounded-xl px-5 py-3.5 gap-2 cursor-pointer"
-                        >
-                            {/* Top row */}
-                            <div className="flex justify-between items-center">
-                                <div className={`${BG_PRESETS[idx % BG_PRESETS.length]} w-fit p-3 rounded-xl shadow-md`}>
-                                    <Shield size={15} className="text-white" />
+                    : cards.length === 0
+                        ? (
+                            <div className="col-span-3 flex flex-col items-center justify-center py-16 text-center">
+                                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                                    <Shield size={20} className="text-gray-300" />
                                 </div>
-                                <button
-                                    onClick={(e) => handleDeploy(e, value.id)}
-                                    disabled={deployingId === value.id}
-                                    className={`flex items-center gap-1 text-[12px] font-semibold text-white px-2 py-1 rounded-md transition-all
-                                        ${deployedId === value.id
-                                            ? "bg-green-500 hover:bg-green-600"
-                                            : deployingId === value.id
-                                                ? "bg-gray-400 cursor-not-allowed"
-                                                : "bg-[#6B55E8] hover:bg-[#5a45d4]"}`}
-                                >
-                                    {deployingId === value.id ? (
-                                        <>
-                                            <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
-                                            Deploying...
-                                        </>
-                                    ) : deployedId === value.id ? (
-                                        <><CheckCircle size={13} /> Deployed</>
-                                    ) : (
-                                        <><Rocket size={13} /> Deploy</>
-                                    )}
-                                </button>
+                                <p className="text-[14px] font-semibold text-gray-400">
+                                    No {showActive ? "active" : "inactive"} checklists
+                                </p>
+                                <p className="text-[12px] text-gray-300 mt-1">
+                                    {showActive
+                                        ? "Create a new checklist or activate an existing one."
+                                        : "All checklists are currently active."}
+                                </p>
                             </div>
+                        )
+                        : cards.map((value, idx) => (
+                            <div
+                                key={value.id}
+                                onMouseEnter={() => setHoveredId(value.id)}
+                                onMouseLeave={() => setHoveredId(null)}
+                                onClick={() => {
+                                    dispatch(validatorNavigate("vadlidateInsurance"));
+                                    dispatch(setInsureTypeIndex(idx));
+                                    dispatch(setSelectedPolicyId(value.id));
+                                    dispatch(setPolicyExtractedFields([]));
+                                    getValidatorDocDetails(setValidatorDocDetails, dispatch, value.id);
+                                    getDocumentTypeOptions(setDocumentTypes, dispatch);
+                                }}
+                                style={{
+                                    border: hoveredId === value.id ? "1px solid #a5b4fc" : "1px solid #e5e7eb",
+                                    boxShadow: hoveredId === value.id ? "0 1px 10px rgba(99,102,241,0.15)" : "0 1px 3px rgba(0,0,0,0.06)",
+                                    transform: hoveredId === value.id ? "scale(1.015)" : "scale(1)",
+                                    transition: "all 0.25s ease",
+                                }}
+                                className="flex flex-col bg-white rounded-xl px-5 py-3.5 gap-2 cursor-pointer"
+                            >
+                                {/* Top row */}
+                                <div className="flex justify-between items-center">
+                                    <div className={`${BG_PRESETS[idx % BG_PRESETS.length]} w-fit p-3 rounded-xl shadow-md`}>
+                                        <Shield size={15} className="text-white" />
+                                    </div>
 
-                            {/* Name + description */}
-                            <div>
-                                <h2 className="text-[15px] font-bold text-gray-800 leading-snug">{value.name}</h2>
-                                <p className="text-[13px] text-gray-500 leading-relaxed line-clamp-2">{value.description}</p>
-                            </div>
-
-                            {/* Provider + location */}
-                            {(value.provider || value.location) && (
-                                <div className="flex flex-wrap gap-2">
-                                    {value.provider && (
-                                        <div className="flex items-start gap-1.5 text-[11px] text-gray-600 font-medium">
-                                            <Building2 size={11} className="flex-shrink-0 mt-0.5" />
-                                            <span className="break-words break-all min-w-0">{value.provider}</span>
-                                        </div>
-                                    )}
-                                    {value.location && (
-                                        <div className="flex items-start gap-1 text-[11px] text-gray-500 font-medium">
-                                            <MapPin size={11} className="flex-shrink-0 mt-0.5" />
-                                            <span className="break-words min-w-0">
-                                                {value.location}{value.state ? `, ${value.state}` : ""}
-                                            </span>
-                                        </div>
-                                    )}
+                                    {/* ✅ Three-dot menu — only Edit */}
+                                    <CardMenu
+                                        onEdit={() => openEditPanel(value)}
+                                    />
                                 </div>
-                            )}
 
-                            <hr className="border-gray-100" />
+                                {/* Name + description */}
+                                <div>
+                                    <h2 className="text-[15px] font-bold text-gray-800 leading-snug">{value.name}</h2>
+                                    <p className="text-[13px] text-gray-500 leading-relaxed line-clamp-2">{value.description}</p>
+                                </div>
 
-                            {/* Footer */}
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border
-                                    ${value.is_active
-                                        ? "bg-green-50 text-green-600 border-green-200"
-                                        : "bg-gray-100 text-gray-500 border-gray-200"}`}>
-                                    {value.is_active ? "Active" : "Inactive"}
-                                </span>
-                                <div className="flex-1" />
-                                <span className="text-[12px] text-gray-400 font-medium">{value.documents_count} docs</span>
-                                <span className="text-[12px] text-gray-400 font-medium">{value.rules_count} rules</span>
-                                <ArrowRight size={15} className="text-gray-400" />
+                                {/* Provider + location */}
+                                {(value.provider?.provider_name || value.location?.location_code) && (
+                                    <div className="flex flex-wrap gap-2">
+                                        {value.provider?.provider_name && (
+                                            <div className="flex items-start gap-1.5 text-[11px] text-gray-600 font-medium">
+                                                <Building2 size={11} className="flex-shrink-0 mt-0.5" />
+                                                <span className="break-words break-all min-w-0">{value.provider?.provider_name}</span>
+                                            </div>
+                                        )}
+                                        {value.location?.location_code && (
+                                            <div className="flex items-start gap-1 text-[11px] text-gray-500 font-medium">
+                                                <MapPin size={11} className="flex-shrink-0 mt-0.5" />
+                                                <span className="break-words min-w-0">
+                                                    {value.location?.location_code}{value.state?.code ? `, ${value.state?.code}` : ""}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                <hr className="border-gray-100" />
+
+                                {/* Footer */}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${value.is_active ? "bg-green-50 text-green-600 border-green-200" : "bg-gray-100 text-gray-500 border-gray-200"}`}>
+                                        {value.is_active ? "Active" : "Inactive"}
+                                    </span>
+                                    <div className="flex-1" />
+                                    <span className="text-[12px] text-gray-400 font-medium">{value.documents_count} docs</span>
+                                    <span className="text-[12px] text-gray-400 font-medium">{value.rules_count} rules</span>
+                                    <ArrowRight size={15} className="text-gray-400" />
+                                </div>
                             </div>
-                        </div>
-                    ))
+                        ))
                 }
             </div>
 

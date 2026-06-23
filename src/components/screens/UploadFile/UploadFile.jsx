@@ -3,45 +3,115 @@ import { Upload, AlertCircle, X, FileText, CheckCircle } from "lucide-react";
 import { UploadCSVFile } from "../../api/apisCall";
 import { navigate } from "../../../store/slices/navigationSlice";
 import { useDispatch } from "react-redux";
+
 const UploadFile = () => {
-    const dispatch = useDispatch()
+    const dispatch = useDispatch();
     const [file, setFile] = useState(null);
     const [fileName, setFileName] = useState("");
     const [fileError, setFileError] = useState("");
     const [dragging, setDragging] = useState(false);
     const [uploading, setUploading] = useState(false);
-    const [toast, setToast] = useState(null); // { type: "success"|"error", msg }
-    const fileInputRef = useRef(null);   // 👈 ref to reset input
+    const [toast, setToast] = useState(null);
+    const fileInputRef = useRef(null);
 
     const showToast = (type, msg) => {
         setToast({ type, msg });
         setTimeout(() => setToast(null), 4000);
     };
 
+    // ✅ Validate CSV content — must have headers + at least 1 data row
+    const validateCSV = (selectedFile) => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result || "";
+
+                // Split into lines, remove blank lines
+                const lines = text
+                    .split(/\r?\n/)
+                    .map((l) => l.trim())
+                    .filter((l) => l.length > 0);
+
+                if (lines.length === 0) {
+                    resolve({ valid: false, error: "The file is empty. Please upload a CSV with data." });
+                    return;
+                }
+
+                if (lines.length === 1) {
+                    // Only headers, no data rows
+                    resolve({ valid: false, error: "The file contains only headers and no data. Please add at least one data row." });
+                    return;
+                }
+
+                // Check header row has actual column names
+                const headers = lines[0].split(",").map((h) => h.trim()).filter((h) => h.length > 0);
+                if (headers.length === 0) {
+                    resolve({ valid: false, error: "The file has no valid column headers." });
+                    return;
+                }
+
+                // Check at least one data row has non-empty values
+                const hasDataRow = lines.slice(1).some((line) => {
+                    const cols = line.split(",").map((c) => c.trim());
+                    return cols.some((c) => c.length > 0);
+                });
+
+                if (!hasDataRow) {
+                    resolve({ valid: false, error: "The file has headers but all data rows are empty." });
+                    return;
+                }
+
+                resolve({ valid: true, error: "" });
+            };
+            reader.onerror = () => resolve({ valid: false, error: "Could not read the file. Please try again." });
+            reader.readAsText(selectedFile);
+        });
+    };
+
+    const processFile = async (selectedFile) => {
+        // ✅ Check file type first
+        if (!selectedFile.type.includes("csv") && !selectedFile.name.endsWith(".csv")) {
+            setFileError("Please upload only CSV files.");
+            return;
+        }
+
+        // ✅ Check file size — max 10MB
+        const maxSizeMB = 10;
+        const maxSizeBytes = maxSizeMB * 1024 * 1024;
+        if (selectedFile.size > maxSizeBytes) {
+            const actualMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
+            setFileError(`File size ${actualMB}MB exceeds the 10MB limit. Please upload a smaller file.`);
+            setFile(null);
+            setFileName("");
+            if (fileInputRef.current) fileInputRef.current.value = "";
+            return;
+        }
+
+        // ✅ Validate content
+        const { valid, error } = await validateCSV(selectedFile);
+        if (!valid) {
+            setFileError(error);
+            setFile(null);
+            setFileName("");
+            if (fileInputRef.current) fileInputRef.current.value = "";
+            return;
+        }
+
+        setFile(selectedFile);
+        setFileName(selectedFile.name);
+        setFileError("");
+    };
+
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
-        if (selectedFile) {
-            if (selectedFile.type === "text/csv" || selectedFile.name.endsWith(".csv")) {
-                setFile(selectedFile);
-                setFileName(selectedFile.name);
-                setFileError("");
-            } else {
-                setFileError("Please upload only CSV files.");
-            }
-        }
+        if (selectedFile) processFile(selectedFile);
     };
 
     const handleDrop = (e) => {
         e.preventDefault();
         setDragging(false);
         const droppedFile = e.dataTransfer.files[0];
-        if (droppedFile && (droppedFile.type === "text/csv" || droppedFile.name.endsWith(".csv"))) {
-            setFile(droppedFile);
-            setFileName(droppedFile.name);
-            setFileError("");
-        } else {
-            setFileError("Only CSV files are allowed.");
-        }
+        if (droppedFile) processFile(droppedFile);
     };
 
     const handleDragOver = (e) => { e.preventDefault(); setDragging(true); };
@@ -51,7 +121,6 @@ const UploadFile = () => {
         setFile(null);
         setFileName("");
         setFileError("");
-        // 👇 reset input so same file can be re-selected
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
@@ -64,15 +133,12 @@ const UploadFile = () => {
             if (response?.data?.status === true || response?.status === 200) {
                 showToast("success", response?.data?.message || "File uploaded successfully.");
                 handleCancel();
-                setTimeout(() => {
-                    dispatch(navigate("dashboard"));
-                }, 2000); // wait 2s for toast to show then navigate
+                setTimeout(() => { dispatch(navigate("dashboard")); }, 2000);
             } else {
-                const errMsg = response?.data?.message || "Upload failed. Please try again.";
-                showToast("error", errMsg);
+                showToast("error", response?.data?.message || "Upload failed. Please try again.");
             }
         } catch (err) {
-            showToast("error", "Something went wrong. Please try again.",err);
+            showToast("error", "Something went wrong. Please try again.");
         } finally {
             setUploading(false);
         }
@@ -84,7 +150,7 @@ const UploadFile = () => {
             {/* ── Toast ── */}
             {toast && (
                 <div className={`fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg border text-[13px] font-medium transition-all
-        ${toast.type === "success"
+                    ${toast.type === "success"
                         ? "bg-green-50 border-green-200 text-green-700"
                         : "bg-red-50 border-red-200 text-red-700"}`}
                 >
@@ -127,17 +193,18 @@ const UploadFile = () => {
                                 onDragLeave={handleDragLeave}
                                 className={`w-full border-2 border-dashed rounded-xl py-10 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${dragging
                                     ? "bg-blue-50 border-blue-400"
-                                    : "bg-gray-50 border-gray-300 hover:bg-blue-50 hover:border-blue-400"}`}
+                                    : fileError
+                                        ? "bg-red-50 border-red-300 hover:border-red-400"
+                                        : "bg-gray-50 border-gray-300 hover:bg-blue-50 hover:border-blue-400"}`}
                             >
-                                <div className="w-12 h-12 bg-white border border-gray-200 rounded-xl flex items-center justify-center shadow-sm mb-3">
-                                    <Upload size={22} className="text-gray-500" />
+                                <div className={`w-12 h-12 border rounded-xl flex items-center justify-center shadow-sm mb-3 ${fileError ? "bg-red-50 border-red-200" : "bg-white border-gray-200"}`}>
+                                    <Upload size={22} className={fileError ? "text-red-400" : "text-gray-500"} />
                                 </div>
                                 <p className="text-[14px] font-semibold text-gray-800">Drag & drop your CSV here</p>
                                 <p className="text-[12px] text-gray-500 mt-1">or click to browse files</p>
                                 <span className="text-[11px] text-gray-400 font-medium bg-gray-100 px-3 py-1 rounded-full mt-3">
                                     .csv files only
                                 </span>
-                                {/* 👇 ref added here */}
                                 <input
                                     ref={fileInputRef}
                                     type="file"
@@ -152,17 +219,22 @@ const UploadFile = () => {
                                 <div className="mt-3 flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 w-fit">
                                     <FileText size={14} className="text-green-600 flex-shrink-0" />
                                     <span className="text-[12px] font-medium text-green-700 truncate flex-1">{fileName}</span>
+                                    {file && (
+                                        <span className="text-[10px] text-green-500 font-medium flex-shrink-0">
+                                            {(file.size / (1024 * 1024)).toFixed(2)}MB
+                                        </span>
+                                    )}
                                     <button onClick={handleCancel} className="text-green-400 hover:text-red-500 transition-colors flex-shrink-0">
                                         <X size={13} />
                                     </button>
                                 </div>
                             )}
 
-                            {/* Error */}
+                            {/* ✅ Error */}
                             {fileError && (
-                                <div className="mt-3 flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                                    <AlertCircle size={13} className="text-red-500 flex-shrink-0" />
-                                    <span className="text-[12px] text-red-600">{fileError}</span>
+                                <div className="mt-3 flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
+                                    <AlertCircle size={13} className="text-red-500 flex-shrink-0 mt-0.5" />
+                                    <span className="text-[12px] text-red-600 leading-relaxed">{fileError}</span>
                                 </div>
                             )}
                         </div>
@@ -179,8 +251,11 @@ const UploadFile = () => {
                         </button>
                         <button
                             onClick={handleProcess}
-                            disabled={uploading}
-                            className="flex items-center gap-1.5 text-[13px] font-semibold text-white bg-[#6B55E8] hover:bg-[#5a45d4] px-5 py-2 rounded-lg transition-all disabled:opacity-60"
+                            disabled={uploading || !file}
+                            className={`flex items-center gap-1.5 text-[13px] font-semibold px-5 py-2 rounded-lg transition-all
+                                ${uploading || !file
+                                    ? "text-white bg-gray-300 cursor-not-allowed opacity-60"
+                                    : "text-white bg-[#6B55E8] hover:bg-[#5a45d4]"}`}
                         >
                             {uploading
                                 ? <><span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Uploading...</>
@@ -215,9 +290,30 @@ const UploadFile = () => {
                             ))}
                         </div>
                     </div>
+
+                    {/* ✅ Validation rules info */}
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl shadow-sm p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <AlertCircle size={14} className="text-amber-500 flex-shrink-0" />
+                            <span className="text-[13px] font-semibold text-amber-700">File Requirements</span>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            {[
+                                "File must be .csv format",
+                                "Maximum file size is 10MB",
+                                "Must have valid column headers",
+                                "Must contain at least one data row",
+                                "Data rows must not be empty",
+                            ].map((rule) => (
+                                <div key={rule} className="flex items-start gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0 mt-1.5" />
+                                    <p className="text-[12px] text-amber-700">{rule}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
-
         </div>
     );
 };

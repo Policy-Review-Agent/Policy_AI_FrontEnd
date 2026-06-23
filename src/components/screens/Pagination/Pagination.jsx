@@ -5,7 +5,7 @@ const Pagination = ({ records, rowsPerPage, currentPage, onPageChange, onRowsPer
     const [open, setOpen] = useState(false);
     const [openUpward, setOpenUpward] = useState(false);
     const ref = useRef(null);
-    const options = [1,10, 25, 50, 100];
+    const options = [1, 10, 25, 50, 100];
     const totalPages = Math.max(1, Math.ceil(records / rowsPerPage));
 
     const normalised = options.map((o) => ({
@@ -18,7 +18,7 @@ const Pagination = ({ records, rowsPerPage, currentPage, onPageChange, onRowsPer
 
     // Build page numbers with ellipsis
     const getPageNumbers = () => {
-        if (totalPages <= 4) {
+        if (totalPages <= 3) {
             return Array.from({ length: totalPages }, (_, i) => i + 1);
         }
         const pageSet = new Set([1, totalPages, currentPage]);
@@ -68,7 +68,7 @@ const Pagination = ({ records, rowsPerPage, currentPage, onPageChange, onRowsPer
             <div className="flex flex-wrap justify-between items-center w-full gap-2">
                 <div ref={ref} className="relative inline-block">
                     <div className="flex justify-start items-center gap-2">
-                        <span className="text-xs font-bold text-gray-500">
+                        <span className="hidden md:inline text-xs font-bold text-gray-500">
                             Number Of Rows
                         </span>
 

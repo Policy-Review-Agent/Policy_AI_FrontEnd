@@ -2,6 +2,7 @@ import { getApi } from "./getApi";
 import { postApi } from "./postApi";
 import { deleteApi } from "./deleteApi";
 import { putApi } from "./putApi";
+import { data } from "autoprefixer";
 export const getValidatorSetupList = async (setValidatorSetupList, dispatch) => {
     try {
         const response = await getApi(`/api/frontend/validators/list/`, {
@@ -28,6 +29,19 @@ export const createValidatorPolicy = async (payload) => {
         return { data: null, error: error.response?.data || error.message };
     }
 }
+
+export const updateValidatorSetUp = async (id, payload) => {
+    try {
+        const response = await putApi(`/api/frontend/validators/update/${id}/`, payload, {
+            // "X-Frontend-Token": "INSURVIA_FRONTEND_SECURE_TOKEN",    
+        })
+        return { data: response?.data || null, error: null };
+    } catch (error) {
+        console.log("FULL ERROR:", error.response);
+        return { data: null, error: error.response?.data || error.message };
+    }
+}
+
 export const getValidatorDocDetails = async (setValidatorDocDetails, dispatch, id) => {
     try {
         const response = await getApi(`/api/frontend/validators/detail/${id}/`, {
@@ -146,5 +160,43 @@ export const depolyValidatorRule = async (id) => {
     } catch (error) {
         console.log("Full ERROR :", error.response)
         return { data: null, error: error.response?.data || error.message };
+    }
+}
+
+export const getProviders = async (dispatch, setProviders) => {
+    try {
+        const response = await getApi("/api/frontend/references/providers/", {})
+        if (response?.data?.data) {
+            dispatch(setProviders(response?.data?.data))
+        }
+    } catch (error) {
+        console.log("FULL ERROR:", error.response);
+        return { data: null, error: error.response?.data || error.message };
+    }
+}
+
+export const getStates = async (dispatch, setStates) => {
+    try {
+        const response = await getApi("/api/frontend/references/states/", {})
+        // console.log(response?.data?.data)
+        if (response?.data?.data) {
+            dispatch(setStates(response?.data?.data))
+        }
+    } catch (error) {
+        console.log("FULL ERROR:", error.response);
+        return { data: null, error: error.response?.data || error.message };
+    }
+}
+
+export const getLocations = async (id, dispatch, setLocations) => {
+    try {
+        const response = await getApi(`/api/frontend/references/locations/?state_id=${id}`, {})
+        if (response?.data?.data) {
+            dispatch(setLocations(response?.data?.data))
+        }
+
+    } catch (error) {
+        console.log("Full Error:", error.response)
+        return { data: null, error: error.response?.data || error.message }
     }
 }

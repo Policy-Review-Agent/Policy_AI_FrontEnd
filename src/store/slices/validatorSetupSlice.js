@@ -6,7 +6,10 @@ const initialState = {
     validatorDocDetails: null, // ✅ null so loading=true until data arrives
     selectedPolicyId: null,
     documentTypes: [],
-    policyExtractedFields: []
+    policyExtractedFields: [],
+    providers: [],
+    states: [],
+    locations: [],
 };
 
 const validatorSetupSlice = createSlice({
@@ -30,9 +33,28 @@ const validatorSetupSlice = createSlice({
         },
         setPolicyExtractedFields: (state, action) => {
             state.policyExtractedFields = action.payload;
+        },
+        setProviders: (state, action) => {
+            state.providers = action.payload;
+        },
+        setStates: (state, action) => {
+            state.states = action.payload;
+        },
+        setLocations: (state, action) => {
+            state.locations = action.payload;
         }
     }
 });
 
-export const { setValidatorSetupList, setValidatorCreate, setValidatorDocDetails, setSelectedPolicyId, setDocumentTypes, setPolicyExtractedFields } = validatorSetupSlice.actions;
+export const
+    { setValidatorSetupList,
+        setValidatorCreate,
+        setValidatorDocDetails,
+        setSelectedPolicyId,
+        setDocumentTypes,
+        setPolicyExtractedFields,
+        setProviders,
+        setStates,
+        setLocations
+    } = validatorSetupSlice.actions;
 export default validatorSetupSlice.reducer;

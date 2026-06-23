@@ -3,9 +3,10 @@ import { Layers, Clock, CheckCircle, AlertCircle, ArrowUp, ArrowDown, ArrowUpDow
 import Breadcrumb from "../../layout/Breadcrumb";
 import BatchCard from "./BatchCard";
 import { getDashboardStats, getDashboardList } from "../../api/apisCall";
-import { setDashboardStats, setDashboardList } from "../../../store/slices/batchSlice";
+import { setDashboardStats, setDashboardList, setRowsPerPage } from "../../../store/slices/batchSlice";
 import { useSelector, useDispatch } from "react-redux";
 import Pagination from "../Pagination/Pagination";
+import CustomDatePicker from "./CustomDatePicker";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const STATS_CONFIG = [
@@ -56,14 +57,17 @@ const SortIcon = ({ field, sortField, sortDir }) => {
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 const Dashboard = () => {
     const dispatch = useDispatch();
-    const { dashboardStats, dashboardList } = useSelector((s) => s.batch);
+    const { dashboardStats, dashboardList, rowsPerPage } = useSelector((s) => s.batch);
 
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [searchTerm, setSearchTerm] = useState("");
     const [sortField, setSortField] = useState(null);
     const [sortDir, setSortDir] = useState("asc");
+
+    // Date range filter state
+    const [dateStart, setDateStart] = useState(null); // Date | null
+    const [dateEnd, setDateEnd] = useState(null); // Date | null
 
     const stats = {
         total_batches: dashboardStats?.total_batches || 0,
@@ -74,24 +78,32 @@ const Dashboard = () => {
 
     // ── Fetch + Poll ──
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            setLoading(true);
-            await Promise.all([
-                getDashboardStats(setDashboardStats, dispatch),
-                getDashboardList(setDashboardList, dispatch),
-            ]);
-            setLoading(false);
-            setCurrentPage(1);
-        };
-        fetchDashboardData();
+    let retryId;
+    let intervalId;
 
-        const intervalId = setInterval(() => {
-            getDashboardStats(setDashboardStats, dispatch);
-            getDashboardList(setDashboardList, dispatch);
-        }, 30000);
+    const fetchDashboardData = async () => {
+        await Promise.all([
+            getDashboardStats(setDashboardStats, dispatch),
+            getDashboardList(setDashboardList, dispatch),
+        ]);
+        setLoading(false);
+    };
 
-        return () => clearInterval(intervalId);
-    }, [dispatch]);
+    const startPolling = async () => {
+        await fetchDashboardData();          // Wait for first call to resolve
+        retryId = setTimeout(async () => {
+            await fetchDashboardData();      // Wait for retry to resolve
+            intervalId = setInterval(fetchDashboardData, 30000); // Then start interval
+        }, 5000);
+    };
+
+    startPolling();
+
+    return () => {
+        clearTimeout(retryId);
+        clearInterval(intervalId);
+    };
+}, []);
 
     // ── Sort handler ──
     const handleSort = (field) => {
@@ -103,11 +115,47 @@ const Dashboard = () => {
         }
     };
 
+    // ── Date picker callbacks ──
+    const handleDateApply = (start, end) => {
+        setDateStart(start);
+        setDateEnd(end);
+        setCurrentPage(1);
+    };
+
+    const handleDateClear = () => {
+        setDateStart(null);
+        setDateEnd(null);
+        setCurrentPage(1);
+    };
+
     // ── Filter ──
-    const filteredData = dashboardList.filter((item) =>
-        item.status?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.batch_date?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredData = dashboardList.filter((item) => {
+        // Text search
+        const matchesSearch =
+            item.status?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.batch_date?.toLowerCase().includes(searchTerm.toLowerCase());
+        if (!matchesSearch) return false;
+
+        // Date range filter — batch_date is an ISO string e.g. "2026-05-18T09:48:05.357000"
+        if (dateStart || dateEnd) {
+            const batchDate = item.batch_date ? new Date(item.batch_date) : null;
+            if (!batchDate) return false;
+
+            // Normalise to start-of-day for comparison
+            const batchDay = new Date(batchDate.getFullYear(), batchDate.getMonth(), batchDate.getDate());
+
+            if (dateStart) {
+                const startDay = new Date(dateStart.getFullYear(), dateStart.getMonth(), dateStart.getDate());
+                if (batchDay < startDay) return false;
+            }
+            if (dateEnd) {
+                const endDay = new Date(dateEnd.getFullYear(), dateEnd.getMonth(), dateEnd.getDate());
+                if (batchDay > endDay) return false;
+            }
+        }
+
+        return true;
+    });
 
     // ── Sort ──
     const sortedData = [...filteredData].sort((a, b) => {
@@ -127,7 +175,7 @@ const Dashboard = () => {
     );
 
     const handleRowsPerPageChange = (newRows) => {
-        setRowsPerPage(newRows);
+        dispatch(setRowsPerPage(newRows));
         setCurrentPage(1);
     };
 
@@ -185,13 +233,36 @@ const Dashboard = () => {
                 {/* Table Header */}
                 <div className="flex justify-between items-center px-4 py-2.5 border-b border-gray-100">
                     <p className="text-[15px] font-semibold text-gray-800">Batch Queue</p>
-                    <input
-                        value={searchTerm}
-                        onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                        placeholder="Search"
-                        className="w-[20%] border border-gray-200 rounded-lg px-3 py-0.5 text-[13px] font-mono text-gray-700 bg-gray-50 outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-500"
-                    />
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        {/* Date range picker — passes callbacks into component */}
+                        <CustomDatePicker
+                            onApply={handleDateApply}
+                            onClear={handleDateClear}
+                        />
+
+                        {/* Search */}
+                        <input
+                            value={searchTerm}
+                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                            placeholder="Search"
+                            className="w-[200px] border border-gray-200 rounded-lg px-3 py-[5px] text-[12px] font-mono text-gray-700 bg-gray-50 outline-none focus:border-[#6B55E8] focus:ring-1 focus:ring-[#6B55E8]/20 transition-all placeholder-gray-400"
+                        />
+                    </div>
                 </div>
+
+                {/* Active filter badge */}
+                {(dateStart || dateEnd) && (
+                    <div className="px-4 py-1.5 bg-indigo-50 border-b border-indigo-100 flex items-center gap-2">
+                        <span className="text-[11px] text-indigo-400 font-medium">Filtering by date:</span>
+                        <span className="text-[11px] text-indigo-600 font-semibold font-mono">
+                            {dateStart?.toLocaleDateString()} {dateEnd && dateEnd !== dateStart ? `→ ${dateEnd.toLocaleDateString()}` : ""}
+                        </span>
+                        <span className="text-[11px] text-indigo-400">
+                            ({sortedData.length} result{sortedData.length !== 1 ? "s" : ""})
+                        </span>
+                    </div>
+                )}
 
                 {/* Table */}
                 <div className="overflow-x-auto overflow-visible">
@@ -211,11 +282,7 @@ const Dashboard = () => {
                                         >
                                             {h}
                                             {isSortable && (
-                                                <SortIcon
-                                                    field={h}
-                                                    sortField={sortField}
-                                                    sortDir={sortDir}
-                                                />
+                                                <SortIcon field={h} sortField={sortField} sortDir={sortDir} />
                                             )}
                                         </th>
                                     );

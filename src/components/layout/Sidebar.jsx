@@ -74,11 +74,11 @@ const Sidebar = ({ onClose, onNavigate }) => {
                             style={{ width: 20, height: 14 }}
                         />
                     </div>
-                    <div className="flex flex-col justify-center items-center">
+                    <div className="flex flex-col justify-start items-start">
                         <span className="text-[15px] font-bold text-gray-800 pt-1">
                             Agentic<span className="text-primary">Policy</span>
                         </span>
-                        <span className="text-[12px] text-gray-800 mt-[-5px] font-bold">Reviewer</span>
+                        <span className="text-[12px] text-indigo-600 mt-[-5px] font-bold">Reviewer</span>
                     </div>
                 </div>
                 <button
@@ -133,7 +133,10 @@ const Sidebar = ({ onClose, onNavigate }) => {
                     </div>
                 </div>
                 <button
-                    onClick={() => dispatch(logout())}
+                    onClick={() => {
+                        sessionStorage.clear();
+                        window.location.href = "/"
+                    }}
                     title="Logout"
                     className="flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors flex-shrink-0"
                 >

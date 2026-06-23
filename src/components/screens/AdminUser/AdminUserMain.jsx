@@ -3,15 +3,17 @@ import Breadcrumb from "../../layout/Breadcrumb";
 import { LayoutDashboard, Users, FileText, Settings } from "lucide-react";
 import AdminDashboard from "./AdminDashboard";
 import UserList from "./UserList";
+import ApiLog from "./ApiLog";
+import SetupGuide from "./SetUpGuide";
 
 const AdminUserMain = () => {
     const [active, setActive] = useState("dashboard");
 
     const tabs = [
         { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        { id: "users",     label: "User List",    icon: Users },
-        { id: "api",       label: "API Log",       icon: FileText },
-        { id: "setup",     label: "Setup Guide",   icon: Settings },
+        { id: "users", label: "User List", icon: Users },
+        { id: "api", label: "API Log", icon: FileText },
+        { id: "setup", label: "Setup Guide", icon: Settings },
     ];
 
     return (
@@ -80,13 +82,9 @@ const AdminUserMain = () => {
                 {/* Tab content */}
                 <div className="min-w-0">
                     {active === "dashboard" && <AdminDashboard />}
-                    {active === "users"     && <UserList />}
-                    {active === "api"       && (
-                        <div className="p-4 text-[13px] text-gray-500">API Log Content</div>
-                    )}
-                    {active === "setup"     && (
-                        <div className="p-4 text-[13px] text-gray-500">Setup Guide Content</div>
-                    )}
+                    {active === "users" && <UserList />}
+                    {active === "api" && <ApiLog />}
+                    {active === "setup" && <SetupGuide/>}
                 </div>
             </div>
         </div>
